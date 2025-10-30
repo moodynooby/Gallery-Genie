@@ -3,7 +3,6 @@
 #### Video Demo: https://youtu.be/CDv-lN-Ebl0
 
 #### Description:
-
 Hey, welcome to **Gallery Genie** - my attempt at making image editing less painful for people like me who just want
 cool effects without getting a PHD in image editing . I'm Manas, an engineering student and this is what happens when I
 decide to mess around with photos instead of studying. Basically, it's a Python program that takes your boring pictures
@@ -70,28 +69,28 @@ Open your terminal and run:
 
 ```pip install -r requirements.txt ```
 
-  
-### Step 2: The Genie File  
-Put a picture in the same directory as path , Here I have included `Genie.jpg` in the same folder as the script.  
-  
-### Step 3: Run the Program  
 
-``` python app.py```
+### Step 2: The Genie File
+Put a picture in the same directory as path , Here I have included `Genie.jpg` in the same folder as the script.
 
-  
-### Step 4: Using It  
-- It'll greet you and ask your name (optional, but fun).  
-- Type what you want, like "turn it into a cartoon."  
-- If it guesses right, say yes. Otherwise, pick from the list.  
-- Enter your image path (e.g., `photos/my_dog.jpg`).  
-- It processes, saves as `output_my_dog.jpg`, and opens it automatically.  
-### Step 5: Testing  
-The test file is included in the project which you can run using pytest  
+### Step 3: Run the Program
 
-### If Stuff Goes Wrong  
-Cut the genie some slack because its his first day at work (And also mine 😅)  
-  
-## Conclusion  
-  
-It's not perfect (the text matching isn't Google-level smart), but it helped me learn about image processing and various python concepts like ascii and making TUI's  
-  
+``` python project.py```
+
+
+### Step 4: Using It
+- It'll greet you and ask your name (optional, but fun).
+- Type what you want, like "turn it into a cartoon."
+- If it guesses right, say yes. Otherwise, pick from the list.
+- Enter your image path (e.g., `photos/my_dog.jpg`).
+- It processes, saves as `output_my_dog.jpg`, and opens it automatically.
+### Step 5: Testing
+The test file is included in the project which you can run using pytest
+
+### If Stuff Goes Wrong
+Cut the genie some slack because its his first day at work (And also mine 😅)
+
+## Conclusion
+
+It's not perfect (the text matching isn't Google-level smart), but it helped me learn about image processing and various python concepts like ascii and making TUI's
+
