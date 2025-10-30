@@ -68,15 +68,16 @@ They're not super fancy, but they catch the obvious bugs so I don't look silly i
 
 Open your terminal and run:
 
-```bash  
-pip install -r requirements.txt```  
+```pip install -r requirements.txt ```
+
   
 ### Step 2: The Genie File  
 Put a picture in the same directory as path , Here I have included `Genie.jpg` in the same folder as the script.  
   
 ### Step 3: Run the Program  
-```bash  
-python app.py```  
+
+``` python app.py```
+
   
 ### Step 4: Using It  
 - It'll greet you and ask your name (optional, but fun).  
@@ -87,9 +88,6 @@ python app.py```
 ### Step 5: Testing  
 The test file is included in the project which you can run using pytest  
 
-
-
-## **DO TRY IT** 
 ### If Stuff Goes Wrong  
 Cut the genie some slack because its his first day at work (And also mine 😅)  
   

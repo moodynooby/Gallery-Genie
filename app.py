@@ -1,13 +1,14 @@
+import os
+import platform
+import subprocess
 import sys
+
+import cv2
 import numpy as np
 from art import text2art
 from ascii_magic import AsciiArt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import cv2
-import os
-import platform
-import subprocess
 
 TOOLS = [
     {'name': 'ASCII-fy', 'keywords': 'ascii art retro monochrome blocky pixelated', 'emoji': '•ᴗ•'},
@@ -90,7 +91,7 @@ def all_tools(tool_name):
                 output_image = cv2.cvtColor(output_image, cv2.COLOR_GRAY2BGR)
             elif tool_name == "ASCII-fy":
                 ascii_art = AsciiArt.from_image(image_path)
-                ascii_art.to_image_file('output_ascii.png', width_ratio=3.7, columns=60)
+                ascii_art.to_image_file('output_ascii.png')
                 print("ASCII art saved as output_ascii.png")
                 open_image_with_default_viewer('output_ascii.png')
                 break
