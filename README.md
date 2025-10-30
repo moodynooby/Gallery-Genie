@@ -1,6 +1,6 @@
 # Gallery Genie (G.G) Inc: Because Who Can Afford Professional Editor Anyway?
 
-#### Video Demo: https://www.youtube.com/TBD
+#### Video Demo: https://youtu.be/CDv-lN-Ebl0
 
 #### Description:
 
