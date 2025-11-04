@@ -1,149 +1,266 @@
+import json
 import os
 import platform
+import secrets
 import subprocess
 import sys
+from datetime import datetime
 
 import cv2
-import numpy as np
 from art import text2art
 from ascii_magic import AsciiArt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# App paths
+APP_DIR = os.path.join(os.path.expanduser("~"), ".gallery_genie")
+SETTINGS_PATH = os.path.join(APP_DIR, "settings.json")
+
+# Tool definitions
 TOOLS = [
-    {'name': 'ASCII-fy', 'keywords': 'ascii art retro monochrome blocky pixelated', 'emoji': '•ᴗ•'},
-    {'name': 'get-aesthetic-photo', 'keywords': 'blur smooth soft gaussian aesthetic photo', 'emoji': '🌫️'},
-    {'name': 'pencil-sketch', 'keywords': 'grayscale invert blur divide pencil drawing cartoon', 'emoji': '🖍️'},
-    {'name': 'get-your-old-timey-look', 'keywords': 'vintage old sepia tone warm photo', 'emoji': '📻'},
-    {'name': 'Get-your-evil-form', 'keywords': 'invert colors negative cyberpunk glitch contrast', 'emoji': '🌈'},
-    {'name': '8-bit-game-look', 'keywords': 'pixelated mosaic zoom compression digital art', 'emoji': '🟩'},
-    {'name': 'Cartoonify', 'keywords': 'blur edge color cartoon comic simplify', 'emoji': '🧩'},
+    {'name': 'ascii-art',     'title': 'ASCII Art',       'keywords': 'ascii text art terminal retro monospaced grayscale', 'emoji': ''},
+    {'name': 'aesthetic-blur','title': 'Aesthetic Blur',  'keywords': 'gaussian blur soft focus dreamy smooth denoise',     'emoji': ''},
+    {'name': 'vintage-sepia', 'title': 'Vintage Sepia',   'keywords': 'sepia warm tone old photo vintage film look',        'emoji': ''},
+    {'name': 'invert-colors', 'title': 'Invert Colors',   'keywords': 'negative invert cyberpunk high contrast neon',       'emoji': ''},
+    {'name': 'pixelate-8bit', 'title': '8-bit Pixelate',  'keywords': 'pixelate mosaic low-res retro 8-bit chunky pixels',  'emoji': ''},
+    {'name': 'pencil-sketch', 'title': 'Pencil Sketch',   'keywords': 'sketch edges grayscale dodge blur hand-drawn',       'emoji': ''},
 ]
 
+# ---------------- settings ----------------
+def ensure_app_dir():
+    os.makedirs(APP_DIR, exist_ok=True)  # create config dir [web:59]
+
+def load_settings():
+    ensure_app_dir()
+    if not os.path.exists(SETTINGS_PATH):
+        return {}
+    try:
+        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_settings(data: dict):
+    ensure_app_dir()
+    with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+# ---------------- auth-like flow (local) ----------------
+def setup():
+    """First-run onboarding: ask name, create local token, store defaults."""
+    settings = load_settings()
+    print(text2art("Gallery Genie", "cybermedium"))
+    print("First time here. Let’s set things up.")
+    name = input("Name (Enter for 'Friend'): ").strip() or "Friend"
+    token = secrets.token_urlsafe(24)  # local remember-me token
+    settings.update({
+        "name": name,
+        "token": token,
+        "created_at": datetime.now().isoformat() + "Z",
+        "last_path": settings.get("last_path", ""),
+        "login_count": 0,
+    })
+    save_settings(settings)
+    print(f"Setup complete. Welcome, {name}.")
+    return settings
+
+def login():
+    """Check token presence; if missing, guide to setup."""
+    settings = load_settings()
+    if not settings.get("token"):
+        print("No profile found. Run `python app.py setup` to get started.")
+        if input("Run setup now? (Y/n): ").strip().lower() in ("", "y", "yes"):
+            settings = setup()
+        else:
+            sys.exit("Exiting.")
+    settings["login_count"] = int(settings.get("login_count", 0)) + 1
+    settings["last_login"] = datetime.now().isoformat() + "Z"
+    save_settings(settings)
+    print(f"Welcome back, {settings.get('name','Friend')}.")
+    return settings
+
+# ---------------- utility ----------------
+def output_path_from(input_path: str, tool_slug: str) -> str:
+    base = os.path.basename(input_path)
+    root, ext = os.path.splitext(base)
+    ext = ext if ext else ".png"
+    return f"{root}.{tool_slug}{ext}"  # descriptive naming [web:101]
+
+def open_with_default_viewer(path: str):
+    if not os.path.exists(path):
+        return
+    system = platform.system()
+    try:
+        if system == "Darwin":
+            subprocess.call(["open", path])
+        elif system == "Windows":
+            os.startfile(path)  # type: ignore[attr-defined]
+        else:
+            subprocess.call(["xdg-open", path])
+    except Exception:
+        pass
+
 def find_best_tool(user_input: str, tools: list) -> tuple:
-    if not user_input.strip():
+    text = (user_input or "").strip().lower()
+    if not text:
         return None, 0.0
-    tool_texts = [tool['keywords'] for tool in tools]
-    all_texts = tool_texts + [user_input.lower()]
-    vectorizer = TfidfVectorizer()
-    vectors = vectorizer.fit_transform(all_texts)
-    query_vector = vectors[-1]
-    tool_vectors = vectors[:-1]
-    scores = cosine_similarity(query_vector, tool_vectors).flatten()
-    best_idx = scores.argmax()
-    best_score = scores[best_idx]
-    return tools[best_idx], best_score
+    corpus = [t['keywords'] for t in tools] + [text]
+    vecs = TfidfVectorizer().fit_transform(corpus)
+    scores = cosine_similarity(vecs[-1], vecs[:-1]).flatten()
+    if scores.size == 0:
+        return None, 0.0
+    i = int(scores.argmax())
+    return tools[i], float(scores[i])
+
+# ---------------- effects ----------------
+def do_ascii_art(image_path: str):
+    out_path = output_path_from(image_path, "ascii-art")
+    art = AsciiArt.from_image(image_path)
+    art.to_image_file(out_path)
+    print(f"Saved: {out_path}")
+
+def do_aesthetic_blur(img):
+    return cv2.GaussianBlur(img, (9, 9), 0)
+
+def do_vintage_sepia(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return cv2.applyColorMap(gray, cv2.COLORMAP_BONE)
+
+def do_invert_colors(img):
+    return cv2.bitwise_not(img)
+
+def do_pixelate_8bit(img):
+    h, w = img.shape[:2]
+    small = cv2.resize(img, (32, 32), interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
+
+def do_pencil_sketch(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    inv = cv2.bitwise_not(gray)
+    blur = cv2.GaussianBlur(inv, (21, 21), 0)
+    denom = cv2.bitwise_not(blur)
+    sketch = cv2.divide(gray, denom, scale=256.0)
+    return cv2.cvtColor(sketch, cv2.COLOR_GRAY2BGR)
+
+# ---------------- prompts ----------------
+def prompt_path(settings: dict) -> str:
+    saved = settings.get("last_path")
+    if saved and os.path.exists(saved):
+        ans = input(f"Use last image path? [{saved}] (Y/n): ").strip().lower() or "y"
+        if ans.startswith("y"):
+            return saved
+    while True:
+        path = input("Enter image path: ").strip().strip('"').strip("'")
+        if not path:
+            print("Path is empty.")
+            continue
+        if not os.path.exists(path):
+            print(f"File not found: {path}")
+            continue
+        settings["last_path"] = path
+        save_settings(settings)
+        return path
 
 def show_menu(tools: list) -> dict:
-    print("\n Available Tools:")
+    print("\nTools")
     print("─" * 40)
-    for i, tool in enumerate(tools, 1):
-        print(f"  {i}. {tool['emoji']} {tool['name']}")
+    for i, t in enumerate(tools, 1):
+        print(f"  {i}. {t['title']}")
     print("─" * 40)
     while True:
+        c = input("Pick a number (or 'q' to quit): ").strip().lower()
+        if c == 'q':
+            sys.exit("Goodbye.")
         try:
-            choice = input("\nEnter tool number (or 'q' to quit): ").strip()
-            if choice.lower() == 'q':
-                sys.exit("Bye..")
-            choice_num = int(choice)
-            if 1 <= choice_num <= len(tools):
-                return tools[choice_num - 1]
-            else:
-                print("❌ Invalid number. Try again.")
+            n = int(c)
+            if 1 <= n <= len(tools):
+                return tools[n - 1]
+            print("Invalid number.")
         except ValueError:
-            print("❌ Please enter a number.")
+            print("Enter a number.")
 
-def open_image_with_default_viewer(image_path):
-    if platform.system() == 'Darwin':
-        subprocess.call(['open', image_path])
-    elif platform.system() == 'Windows':
-        os.startfile(image_path)
-    else:
-        subprocess.call(['xdg-open', image_path])
-
-def all_tools(tool_name):
-    while True:
-        image_path = input("Enter the path to your image: ").strip()
+def process_image(tool_name: str, image_path: str):
+    if tool_name == "ascii-art":
         try:
-            image = cv2.imread(image_path)
-            if image is None:
-                print(f"Error: Could not load image '{image_path}'. Try again.")
-                continue
-
-            if tool_name == "get-aesthetic-photo":
-                output_image = cv2.GaussianBlur(image, (9, 9), 0)
-            elif tool_name == "pencil-sketch":
-                kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-                output_image = cv2.filter2D(image, -1, kernel)
-            elif tool_name == "get-your-old-timey-look":
-                output_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                output_image = cv2.applyColorMap(output_image, cv2.COLORMAP_BONE)
-            elif tool_name == "Get-your-evil-form":
-                output_image = cv2.bitwise_not(image)
-            elif tool_name == "8-bit-game-look":
-                small = cv2.resize(image, (32, 32), interpolation=cv2.INTER_LINEAR)
-                output_image = cv2.resize(small, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
-            elif tool_name == "Cartoonify":
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                inv = 255 - gray
-                blur = cv2.GaussianBlur(inv, (21, 21), 0)
-                output_image = cv2.divide(gray, 255 - blur, scale=256)
-                output_image = cv2.cvtColor(output_image, cv2.COLOR_GRAY2BGR)
-            elif tool_name == "ASCII-fy":
-                ascii_art = AsciiArt.from_image(image_path)
-                ascii_art.to_image_file('output_ascii.png')
-                print("ASCII art saved as output_ascii.png")
-                open_image_with_default_viewer('output_ascii.png')
-                break
-            else:
-                print("Unknown tool.")
-                break
-
-            output_path = f"output_{os.path.basename(image_path)}"
-            cv2.imwrite(output_path, output_image)
-            print(f"Processed image saved as '{output_path}'")
-            open_image_with_default_viewer(output_path)
-            break
+            do_ascii_art(image_path)
+            open_with_default_viewer(output_path_from(image_path, "ascii-art"))
         except Exception as e:
             print(f"Error: {e}")
+        finally:
+            print("Tip: Save multiple versions to compare styles side by side.")
+        return
 
-def welcome():
-    print(text2art("Welcome to Gallery Genie (G.G) Inc", "cybermedium"))
-    print()
-    print("Umm.... Hello I am an intern at G.G, and this is my first day so... I am sorry in advance")
-    print()
+    img = cv2.imread(image_path)
+    if img is None:
+        print("Couldn’t read that as an image. Try another file.")
+        return
+
     try:
-        my_art = AsciiArt.from_image('Genie.jpg')
-        print(my_art.to_ascii(width_ratio=3.7, columns=60))
-    except FileNotFoundError:
-        print("🧞 [Genie image not found - place Genie.jpg in same folder] 🧞")
-    print()
-    name = input("I am G, what's your name: ").strip() or "Friend"
-    print()
-    print(text2art(f'Hello {name}', 'rounded'))
-    return name
-
-def main():
-    user_name = welcome()
-    while True:
-        print(f"\n🎉 Welcome {user_name}! You just tell me in your natural language and I will get you a tool.\n")
-        user_query = input("Describe your task: ").strip()
-        if not user_query:
-            print("Please describe your task!")
-            continue
-        tool, confidence = find_best_tool(user_query, TOOLS)
-        if confidence > 0.2:
-            print(f"\nDid you mean?? {tool['emoji']} {tool['name']}")
-            confirm = input("\nAm I right??? (y/n): ").strip().lower()
-            if confirm == 'y':
-                all_tools(tool['name'])
+        if tool_name == "aesthetic-blur":
+            out = do_aesthetic_blur(img)
+        elif tool_name == "vintage-sepia":
+            out = do_vintage_sepia(img)
+        elif tool_name == "invert-colors":
+            out = do_invert_colors(img)
+        elif tool_name == "pixelate-8bit":
+            out = do_pixelate_8bit(img)
+        elif tool_name == "pencil-sketch":
+            out = do_pencil_sketch(img)
         else:
-            print("\nHmm, I'm not sure what you need it is my first day after all let's try..")
-            selected_tool = show_menu(TOOLS)
-            if selected_tool is None:
-                print("Goodbye!")
-                break
-            all_tools(selected_tool['name'])
+            print("Unknown tool.")
+            return
+
+        out_path = output_path_from(image_path, tool_name)
+        cv2.imwrite(out_path, out)
+        print(f"Saved: {out_path}")
+
+        h, w = out.shape[:2]
+        mood = {
+            "aesthetic-blur": "soft, low-detail look",
+            "vintage-sepia": "warm, aged tones",
+            "invert-colors": "high-contrast negative",
+            "pixelate-8bit": "chunky retro blocks",
+            "pencil-sketch": "hand-drawn lines",
+        }.get(tool_name, "new style")
+        print(f"Output size: {w}×{h}. Style: {mood}.")
+        print("Tip: Run another tool on the saved file to layer effects.")
+        open_with_default_viewer(out_path)
+    except Exception as e:
+        print(f"Error: {e}")
+
+def suggest_tool(query: str):
+    tool, score = find_best_tool(query, TOOLS)
+    if tool and score > 0.20:
+        print(f"Suggested tool: {tool['title']} (match {score:.2f})")
+        if input("Use this? (y/n): ").strip().lower() in ("y", "yes"):
+            return tool
+    print("Let’s choose from the menu.")
+    return show_menu(TOOLS)
+
+# ---------------- entry ----------------
+def main():
+    args = [a.lower() for a in sys.argv[1:]]
+    if "setup" in args:
+        setup()
+        return
+    settings = login()  # remember-me token + name [web:59]
+
+    print(text2art("Gallery Genie", "cybermedium"))
+    print("Tell me what you want to do, and I’ll suggest a tool.")
+    if settings.get("login_count", 1) == 1:
+        print("Tip: Run `python app.py setup` anytime to change your name or reset the token.")
+
+    while True:
+        print("\nDescribe your task (or 'q' to exit).")
+        query = input("> ").strip()
+        if query.lower() in ("q", "quit", "exit"):
+            sys.exit("Goodbye.")
+        if not query:
+            print("A short description helps pick the right tool.")
+            continue
+        tool = suggest_tool(query)
+        path = prompt_path(settings)
+        process_image(tool['name'], path)
 
 if __name__ == "__main__":
     main()
