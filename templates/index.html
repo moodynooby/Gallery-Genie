@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gallery Genie - AI Image Transformation Magic</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         * {
@@ -64,18 +67,39 @@
         }
 
         @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
         }
 
         @keyframes glow {
-            0%, 100% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.4); }
-            50% { box-shadow: 0 0 60px rgba(236, 72, 153, 0.6); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 60px rgba(236, 72, 153, 0.6);
+            }
         }
 
         .container {
@@ -158,6 +182,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -207,6 +232,24 @@
             padding: 18px 24px;
             border-radius: 20px;
             line-height: 1.6;
+        }
+
+        .box-q {
+            width: 50%;
+            height: 60px;
+            margin: 5px auto;
+            padding: 5px;
+            background: var(--genie-gradient);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .box-q-cont {
+            display: flex;
+            flex-direction: row;
+            column-count: 2;
+            column-gap: 10px;
+            text-align: center;
         }
 
         .message.genie .message-bubble {
@@ -371,7 +414,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .chat-input-area {
@@ -384,19 +429,23 @@
         }
 
         .upload-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            width: fit-content;
+            height: fit-content;
+            padding: 10px;
+            border-radius: 10px;
             background: var(--genie-gradient);
             border: none;
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
+            gap: 10px;
             justify-content: center;
             flex-shrink: 0;
+            margin-top: 5px;
+
         }
 
         .upload-btn:hover {
@@ -469,12 +518,25 @@
             animation: typing 1.4s infinite;
         }
 
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-10px); }
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-10px);
+            }
         }
 
         .hidden {
@@ -544,15 +606,21 @@
         }
     </style>
 </head>
+
 <body>
     <div class="magic-bg"></div>
     <div class="stars" id="stars"></div>
 
     <div class="container">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="genie-icon"><i class="bi bi-stars"></i></div>
             <h1 class="logo">Gallery Genie</h1>
             <p class="tagline">Your AI-Powered Image Transformation Companion</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            <br>
+            <button class="upload-btn" id="uploadBtn" title="Upload Image"><i class="bi bi-image-fill"></i>Upload
+                Image</button>
+
         </div>
 
         <div class="chat-container">
@@ -566,15 +634,25 @@
                             <i class="bi bi-image"></i> Upload an image to begin<br>
                             <i class="bi bi-chat-dots"></i> Tell me what effect you want (e.g., "make it vintage")<br>
                             <i class="bi bi-magic"></i> Watch me work my magic!
+                            <h3>Pss... Here's What I can do</h3>
+
+                            <div class="box-q-cont">
+                                <p class="box-q">Evil Self</p>
+                                <p class="box-q">8-bit Pixelate</p>
+                                <p class="box-q">Pencil Sketch</p>
+                                <p class="box-q">Ascii Art</p>
+                                <p class="box-q">Aesthetic Blur</p>
+                                <p class="box-q">Vintage Sepia</p>
+                            </div>
+
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="chat-input-area">
-                <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                <button class="upload-btn" id="uploadBtn" title="Upload Image"><i class="bi bi-image-fill"></i></button>
-                <input type="text" class="chat-input" id="chatInput" placeholder="Upload an image first to start chatting..." disabled>
+                <input type="text" class="chat-input" id="chatInput"
+                    placeholder="Upload an image first to start chatting..." disabled>
                 <button class="send-btn" id="sendBtn" disabled><i class="bi bi-send-fill"></i></button>
             </div>
         </div>
@@ -592,7 +670,7 @@
         const uploadBtn = document.getElementById('uploadBtn');
         const fileInput = document.getElementById('fileInput');
 
-        const tools = {{ tools|tojson }};
+        const tools = {{ tools| tojson }};
 
         // Create stars
         const starsContainer = document.getElementById('stars');
@@ -612,7 +690,7 @@
         function addGenieMessage(text, extraContent = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message genie';
-            
+
             let content = `
                 <div class="message-content">
                     <div class="avatar"><i class="bi bi-stars"></i></div>
@@ -622,7 +700,7 @@
                     </div>
                 </div>
             `;
-            
+
             messageDiv.innerHTML = content;
             chatMessages.appendChild(messageDiv);
             scrollToBottom();
@@ -672,17 +750,12 @@
             messageDiv.className = 'message genie image-message';
             messageDiv.innerHTML = `
                 <div class="message-content">
-                    <div class="avatar"><i class="bi bi-stars"></i></div>
-                    <div class="message-bubble">
-                        <strong>${label}</strong>
-                        <div class="image-preview-msg">
-                            <img src="${imageSrc}" alt="${label}">
-                        </div>
+                    <div class="image-preview-msg">
+                        <img src="${imageSrc}" alt="${label}">
                     </div>
                 </div>
             `;
-            chatMessages.appendChild(messageDiv);
-            scrollToBottom();
+            uploadBtn.appendChild(messageDiv);
             return messageDiv;
         }
 
@@ -804,10 +877,8 @@
                 if (data.success) {
                     currentUploadedFilename = data.filename;
                     addImageMessage(`/static/uploads/${data.filename}`, `📸 Your image has been uploaded!`);
-                    addGenieMessage("Perfect! Now tell me what kind of transformation you'd like, or choose from my magical tools below:", '');
-                    addToolSelector();
-                    conversationState = 'awaiting_tool_selection';
-                    
+
+                    addGenieMessage("Perfect! Now tell me what kind of transformation you'd like", '');
                     // Enable chat input after image upload
                     chatInput.disabled = false;
                     chatInput.placeholder = "Ask me anything... (e.g., 'make it vintage')";
@@ -843,12 +914,16 @@
                     selectedTool = data.tool.name;
                     addGenieMessage(`Great! I'll apply <strong>${data.tool.title}</strong> to your image. Ready?`, `
                         <div class="action-buttons">
-                            <button class="btn btn-secondary" onclick="location.reload()">Choose Different Tool</button>
+                            <button class="btn btn-secondary" onclick="addToolSelector()">Choose Different Tool</button>
                             <button class="btn btn-primary" onclick="applyTransformation()">✨ Apply Now!</button>
                         </div>
                     `);
                 } else {
                     addGenieMessage(data.response);
+                    addToolSelector();  
+                    conversationState = 'awaiting_tool_selection';
+
+
                 }
             } catch (error) {
                 hideTypingIndicator();
@@ -877,4 +952,5 @@
         });
     </script>
 </body>
+
 </html>

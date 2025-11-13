@@ -41,7 +41,7 @@ TOOLS = [
     },
     {
         "name": "invert-colors",
-        "title": "Invert Colors",
+        "title": "Evil Self",
         "description": "Invert all colors to create negative image with high contrast. Makes dark areas bright and vice versa. Ideal for cyberpunk neon aesthetic, x-ray effect, and surreal artistic look.",
         "icon": '<i class="bi bi-palette"></i>'
     },
@@ -179,7 +179,8 @@ def chat():
     
     if result and result['confidence'] > 0.35:
         tool = result['tool']
-        response = f"Ooh, based on '{message}', I'd recommend {tool['title']}! {tool['description'].split('.')[0]}. Confidence: {result['confidence']:.0%}"
+        response = f"Got it! Based on your request, I'll use {tool['title']} - {tool['description'].split('.')[0]}. " \
+                  f"Would you like to proceed with this transformation?"
         return jsonify({
             "response": response,
             "type": "suggestion",
@@ -188,7 +189,7 @@ def chat():
         })
     else:
         return jsonify({
-            "response": f"Hmm, I'm not quite sure about '{message}'. Let me show you all my magical tools instead!",
+            "response": f"I couldn't quite understand which effect you'd like to apply. Here are the available tools to choose from:",
             "type": "menu",
             "tools": TOOLS
         })
