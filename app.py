@@ -139,7 +139,7 @@ def do_pencil_sketch(img):
     sketch = cv2.divide(gray, denom, scale=256.0)
     return cv2.cvtColor(sketch, cv2.COLOR_GRAY2BGR)
 
-def find_best_tool(user_input: str) -> dict:
+def find_best_tool(user_input: str) -> dict | None:
     text = (user_input or "").strip()
     if not text:
         return None
@@ -150,12 +150,12 @@ def find_best_tool(user_input: str) -> dict:
         tool_descriptions = [t["description"] for t in TOOLS]
         tool_embeddings = model.encode(tool_descriptions, convert_to_tensor=True)
         similarities = util.cos_sim(query_embedding, tool_embeddings)[0]
-        best_idx = torch.argmax(similarities).item()
-        best_score = similarities[best_idx].item()
+        best_idx = int(torch.argmax(similarities).item())
+        best_score = float(similarities[best_idx].item())
         
         return {
             "tool": TOOLS[best_idx],
-            "confidence": float(best_score)
+            "confidence": best_score
         }
     except Exception as e:
         return None
@@ -166,7 +166,7 @@ def index():
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    data = request.json
+    data = request.json or {}
     message = data.get('message', '').strip()
     
     if not message:
@@ -203,7 +203,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
     
-    if file and allowed_file(file.filename):
+    if file and file.filename and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         unique_filename = f"{timestamp}_{filename}"
@@ -220,7 +220,7 @@ def upload_file():
 
 @app.route('/api/process', methods=['POST'])
 def process_image():
-    data = request.json
+    data = request.json or {}
     filename = data.get('filename')
     tool_name = data.get('tool')
     
