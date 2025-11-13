@@ -8,6 +8,7 @@ import cv2
 from ascii_magic import AsciiArt
 from sentence_transformers import SentenceTransformer, util
 import torch
+import threading
 
 # Force CPU-only to reduce GPU heat
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -33,7 +34,7 @@ TOOLS = [
     {
         "name": "aesthetic-blur",
         "title": "Aesthetic Blur",
-        "description": "Apply Gaussian blur for soft focus dreamy effect. Creates smooth blurred background with gentle bokeh. Great for romantic portraits, calming visuals, and reducing sharp details.",
+        "description": "Apply Gaussian blur for soft focus dreamy effect. Creates smooth blurred background with gentle bokeh. `Great `for romantic portraits, calming visuals, and reducing sharp details.",
         "icon": '<i class="bi bi-droplet-half"></i>'
     },
     {
@@ -105,6 +106,20 @@ def get_model():
     if _model is None:
         _model = SentenceTransformer('all-MiniLM-L6-v2')
     return _model
+
+
+# Preload the model in a background thread so it's warmed before the first query.
+# This keeps startup responsive while loading the heavy SentenceTransformer.
+def _preload_model_background():
+    try:
+        print("Preloading sentence-transformers model in background...")
+        get_model()
+        print("Model preload complete.")
+    except Exception as e:
+        print("Model preload failed:", e)
+
+# Start preload in daemon thread at module import/startup.
+threading.Thread(target=_preload_model_background, daemon=True).start()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

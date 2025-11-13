@@ -787,11 +787,15 @@
                     document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
                     option.classList.add('selected');
                     selectedTool = option.dataset.tool;
-                    document.getElementById('applyToolBtn').disabled = false;
+                    const applyBtn = document.getElementById('applyToolBtn');
+                    if (applyBtn) applyBtn.disabled = false;
                 });
             });
 
-            document.getElementById('applyToolBtn').addEventListener('click', applyTransformation);
+            const applyBtn = document.getElementById('applyToolBtn');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', applyTransformation);
+            }
             scrollToBottom();
         }
 
@@ -799,7 +803,8 @@
             if (!currentUploadedFilename || !selectedTool) return;
 
             conversationState = 'processing';
-            document.getElementById('applyToolBtn').disabled = true;
+            const applyBtn = document.getElementById('applyToolBtn');
+            if (applyBtn) applyBtn.disabled = true;
 
             const toolName = tools.find(t => t.name === selectedTool)?.title || selectedTool;
             addGenieMessage(`🪄 Applying ${toolName}... Watch the magic happen!`);
@@ -913,7 +918,7 @@
                 if (data.type === 'suggestion' && data.tool) {
                     addGenieMessage(data.response);
                     selectedTool = data.tool.name;
-                    addGenieMessage(`Great! I'll apply <strong>${data.tool.title}</strong> to your image. Ready?`, `
+                    addGenieMessage(`Confirm adding <strong>${data.tool.title}</strong> to your image?`, `
                         <div class="action-buttons">
                             <button class="btn btn-secondary" onclick="addToolSelector()">Choose Different Tool</button>
                             <button class="btn btn-primary" onclick="applyTransformation()">✨ Apply Now!</button>
