@@ -1,172 +1,135 @@
 import json
 import os
-import platform
-import secrets
-import subprocess
-import sys
+import random
 from datetime import datetime
-
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import cv2
-from art import text2art
 from ascii_magic import AsciiArt
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer, util
+import torch
 
-# App paths
-APP_DIR = os.path.join("./")
-SETTINGS_PATH = os.path.join(APP_DIR, "settings.json")
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['PROCESSED_FOLDER'] = 'static/processed'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['SECRET_KEY'] = 'your-secret-key-here'
 
-# Tool definitions
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
+
 TOOLS = [
     {
         "name": "ascii-art",
         "title": "ASCII Art",
-        "keywords": "ascii text art terminal retro monospaced grayscale",
+        "description": "Convert images to ASCII text art with monospaced characters. Creates retro terminal-style artwork with grayscale text representation. Perfect for vintage computer aesthetics and text-based visuals.",
+        "icon": '<i class="bi bi-code-square"></i>'
     },
     {
         "name": "aesthetic-blur",
         "title": "Aesthetic Blur",
-        "keywords": "gaussian blur soft focus dreamy smooth denoise",
+        "description": "Apply Gaussian blur for soft focus dreamy effect. Creates smooth blurred background with gentle bokeh. Great for romantic portraits, calming visuals, and reducing sharp details.",
+        "icon": '<i class="bi bi-droplet-half"></i>'
     },
     {
         "name": "vintage-sepia",
         "title": "Vintage Sepia",
-        "keywords": "sepia warm tone old photo vintage film look",
+        "description": "Add warm sepia tones for old photograph look. Creates nostalgic vintage film aesthetic with brownish warm colors. Perfect for antique appearance, historical feel, and retro photography style.",
+        "icon": '<i class="bi bi-camera-reels"></i>'
     },
     {
         "name": "invert-colors",
         "title": "Invert Colors",
-        "keywords": "negative invert cyberpunk high contrast neon",
+        "description": "Invert all colors to create negative image with high contrast. Makes dark areas bright and vice versa. Ideal for cyberpunk neon aesthetic, x-ray effect, and surreal artistic look.",
+        "icon": '<i class="bi bi-palette"></i>'
     },
     {
         "name": "pixelate-8bit",
         "title": "8-bit Pixelate",
-        "keywords": "pixelate mosaic low-res retro 8-bit chunky pixels",
+        "description": "Create chunky pixelated mosaic with retro 8-bit video game style. Reduces image to low resolution blocky pixels. Perfect for pixel art, retro gaming aesthetic, and minimalist geometric look.",
+        "icon": '<i class="bi bi-grid-3x3"></i>'
     },
     {
         "name": "pencil-sketch",
         "title": "Pencil Sketch",
-        "keywords": "sketch edges grayscale dodge blur hand-drawn",
+        "description": "Transform photo into hand-drawn pencil sketch with artistic edges. Creates black and white drawing effect with sketchy lines. Great for artistic portraits, illustration style, and charcoal drawing look.",
+        "icon": '<i class="bi bi-pencil"></i>'
     },
 ]
 
+_model = None
 
-def ensure_app_dir():
-    os.makedirs(APP_DIR, exist_ok=True)
+GENIE_RESPONSES = {
+    "greeting": [
+        "Greetings, creative soul! I'm Gallery Genie, your magical image transformation companion! ✨",
+        "Welcome to my mystical gallery! I'm Gallery Genie, here to grant your artistic wishes! 🧞",
+        "Hey there, art lover! Gallery Genie at your service, ready to make some magic! 🎨",
+    ],
+    "upload_prompt": [
+        "Upload an image and let me work my magic! What transformation do you have in mind?",
+        "Drop your image here and tell me your vision - I'll make it reality!",
+        "Ready to create something amazing? Upload an image and describe your dream effect!",
+    ],
+    "processing": [
+        "Ah, excellent choice! Let me weave some magic into your image... ✨",
+        "Wonderful! Casting my artistic spell on your image right now... 🪄",
+        "Perfect! Watch as I transform your image with a touch of magic... 🌟",
+    ],
+    "success": [
+        "Voilà! Your masterpiece is ready! What do you think? 🎨",
+        "Ta-da! I've worked my magic! Your transformed image awaits! ✨",
+        "Behold! Your image has been transformed by the power of Gallery Genie! 🌟",
+    ],
+    "suggestions": [
+        "May I suggest trying {} for a stunning effect?",
+        "How about {} to really make your image pop?",
+        "I think {} would look absolutely magical on this!",
+    ],
+    "tips": {
+        "ascii-art": "Pro tip: ASCII art works best with high-contrast images and portraits!",
+        "aesthetic-blur": "Try this on backgrounds for that dreamy bokeh effect!",
+        "vintage-sepia": "Perfect for giving your photos that nostalgic, timeless feel!",
+        "invert-colors": "This creates stunning cyberpunk vibes - especially great for night scenes!",
+        "pixelate-8bit": "Retro gaming aesthetic activated! Works best on colorful images!",
+        "pencil-sketch": "Turn any photo into art! Works wonderfully on well-lit portraits!",
+    }
+}
 
+def get_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _model
 
-def load_settings():
-    ensure_app_dir()
-    if not os.path.exists(SETTINGS_PATH):
-        return {}
-    try:
-        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
-def save_settings(data: dict):
-    ensure_app_dir()
-    with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-
-def setup():
-    settings = load_settings()
-    print(text2art("Gallery Genie", "cybermedium"))
-    print("First time here. Let's set things up.")
-    name = input("Name (Enter for 'Friend'): ").strip() or "Friend"
-    token = secrets.token_urlsafe(24)
-    settings.update(
-        {
-            "name": name,
-            "token": token,
-            "created_at": datetime.now().isoformat() + "Z",
-            "last_path": settings.get("last_path", ""),
-            "login_count": 0,
-        }
-    )
-    save_settings(settings)
-    print(f"Setup complete. Welcome, {name}.")
-    return settings
-
-
-def login():
-    settings = load_settings()
-    if not settings.get("token"):
-        print("No profile found. Run `python app.py setup` to get started.")
-        if input("Run setup now? (Y/n): ").strip().lower() in ("", "y", "yes"):
-            settings = setup()
-        else:
-            sys.exit("Exiting.")
-    settings["login_count"] = int(settings.get("login_count", 0)) + 1
-    settings["last_login"] = datetime.now().isoformat() + "Z"
-    save_settings(settings)
-    print(f"Welcome back, {settings.get('name','Friend')}.")
-    return settings
-
-
-def output_path_from(input_path: str, tool_slug: str) -> str:
-    base = os.path.basename(input_path)
-    root, ext = os.path.splitext(base)
+def output_path_from(input_filename: str, tool_slug: str) -> str:
+    root, ext = os.path.splitext(input_filename)
     ext = ext if ext else ".png"
-    return f"{root}.{tool_slug}{ext}"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"{root}_{tool_slug}_{timestamp}{ext}"
 
-
-def open_with_default_viewer(path: str):
-    if not os.path.exists(path):
-        return
-    system = platform.system()
-    try:
-        if system == "Darwin":
-            subprocess.call(["open", path])
-        elif system == "Windows":
-            os.startfile(path)
-        else:
-            subprocess.call(["xdg-open", path])
-    except Exception:
-        pass
-
-
-def find_best_tool(user_input: str, tools: list) -> tuple:
-    text = (user_input or "").strip().lower()
-    if not text:
-        return None, 0.0
-    corpus = [t["keywords"] for t in tools] + [text]
-    vecs = TfidfVectorizer().fit_transform(corpus)
-    scores = cosine_similarity(vecs[-1], vecs[:-1]).flatten()
-    if scores.size == 0:
-        return None, 0.0
-    i = int(scores.argmax())
-    return tools[i], float(scores[i])
-
-
-def do_ascii_art(image_path: str):
-    out_path = output_path_from(image_path, "ascii-art")
+def do_ascii_art(image_path: str, output_path: str):
     art = AsciiArt.from_image(image_path)
-    art.to_image_file(out_path)
-    print(f"Saved: {out_path}")
-
+    art.to_image_file(output_path)
 
 def do_aesthetic_blur(img):
     return cv2.GaussianBlur(img, (9, 9), 0)
-
 
 def do_vintage_sepia(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return cv2.applyColorMap(gray, cv2.COLORMAP_BONE)
 
-
 def do_invert_colors(img):
     return cv2.bitwise_not(img)
-
 
 def do_pixelate_8bit(img):
     h, w = img.shape[:2]
     small = cv2.resize(img, (32, 32), interpolation=cv2.INTER_LINEAR)
     return cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
-
 
 def do_pencil_sketch(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -176,129 +139,144 @@ def do_pencil_sketch(img):
     sketch = cv2.divide(gray, denom, scale=256.0)
     return cv2.cvtColor(sketch, cv2.COLOR_GRAY2BGR)
 
-
-def prompt_path(settings: dict) -> str:
-    saved = settings.get("last_path")
-    if saved and os.path.exists(saved):
-        ans = input(f"Use last image path? [{saved}] (Y/n): ").strip().lower() or "y"
-        if ans.startswith("y"):
-            return saved
-    while True:
-        path = input("Enter image path: ").strip().strip('"').strip("'")
-        if not path:
-            print("Path is empty.")
-            continue
-        if not os.path.exists(path):
-            print(f"File not found: {path}")
-            continue
-        settings["last_path"] = path
-        save_settings(settings)
-        return path
-
-
-def show_menu(tools: list) -> dict:
-    print("\n Image Editing Tools")
-    print("─" * 40)
-    for i, t in enumerate(tools, 1):
-        print(f"  {i}. {t['title']}")
-    print("─" * 40)
-    while True:
-        c = input("Pick a number (or 'q' to quit): ").strip().lower()
-        if c == "q":
-            sys.exit("Goodbye.")
-        try:
-            n = int(c)
-            if 1 <= n <= len(tools):
-                return tools[n - 1]
-            print("Invalid number.")
-        except ValueError:
-            print("Enter a number.")
-
-
-def process_image(tool_name: str, image_path: str):
-    if tool_name == "ascii-art":
-        try:
-            do_ascii_art(image_path)
-            open_with_default_viewer(output_path_from(image_path, "ascii-art"))
-        except Exception as e:
-            print(f"Error: {e}")
-        return
-
-    img = cv2.imread(image_path)
-    if img is None:
-        print("Couldn't read that as an image. Try another file.")
-        return
-
+def find_best_tool(user_input: str) -> dict:
+    text = (user_input or "").strip()
+    if not text:
+        return None
+    
     try:
-        if tool_name == "aesthetic-blur":
-            out = do_aesthetic_blur(img)
-        elif tool_name == "vintage-sepia":
-            out = do_vintage_sepia(img)
-        elif tool_name == "invert-colors":
-            out = do_invert_colors(img)
-        elif tool_name == "pixelate-8bit":
-            out = do_pixelate_8bit(img)
-        elif tool_name == "pencil-sketch":
-            out = do_pencil_sketch(img)
-        else:
-            print("Unknown tool.")
-            return
-
-        out_path = output_path_from(image_path, tool_name)
-        cv2.imwrite(out_path, out)
-        print(f"Saved: {out_path}")
-
-        h, w = out.shape[:2]
-        mood = {
-            "aesthetic-blur": "soft, low-detail look",
-            "vintage-sepia": "warm, aged tones",
-            "invert-colors": "high-contrast negative",
-            "pixelate-8bit": "chunky retro blocks",
-            "pencil-sketch": "hand-drawn lines",
-        }.get(tool_name, "new style")
-        print(f"Output size: {w}×{h}. Style: {mood}.")
-        print("Tip: Run another tool on the saved file to layer effects.")
-        open_with_default_viewer(out_path)
+        model = get_model()
+        query_embedding = model.encode(text, convert_to_tensor=True)
+        tool_descriptions = [t["description"] for t in TOOLS]
+        tool_embeddings = model.encode(tool_descriptions, convert_to_tensor=True)
+        similarities = util.cos_sim(query_embedding, tool_embeddings)[0]
+        best_idx = torch.argmax(similarities).item()
+        best_score = similarities[best_idx].item()
+        
+        return {
+            "tool": TOOLS[best_idx],
+            "confidence": float(best_score)
+        }
     except Exception as e:
-        print(f"Error: {e}")
+        return None
 
+@app.route('/')
+def index():
+    return render_template('index.html', tools=TOOLS)
 
-def suggest_tool(query: str):
-    tool, score = find_best_tool(query, TOOLS)
-    if tool and score > 0.20:
-        print(f"Suggested tool: {tool['title']} (match {score:.2f})")
-        if input("Use this? (y/n): ").strip().lower() in ("y", "yes"):
-            return tool
-    print("Hmm.. let us try to choose from the menu.")
-    return show_menu(TOOLS)
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.json
+    message = data.get('message', '').strip()
+    
+    if not message:
+        return jsonify({
+            "response": random.choice(GENIE_RESPONSES["upload_prompt"]),
+            "type": "prompt"
+        })
+    
+    result = find_best_tool(message)
+    
+    if result and result['confidence'] > 0.35:
+        tool = result['tool']
+        response = f"Ooh, based on '{message}', I'd recommend {tool['title']}! {tool['description'].split('.')[0]}. Confidence: {result['confidence']:.0%}"
+        return jsonify({
+            "response": response,
+            "type": "suggestion",
+            "tool": tool,
+            "confidence": result['confidence']
+        })
+    else:
+        return jsonify({
+            "response": f"Hmm, I'm not quite sure about '{message}'. Let me show you all my magical tools instead!",
+            "type": "menu",
+            "tools": TOOLS
+        })
 
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_filename = f"{timestamp}_{filename}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(filepath)
+        
+        return jsonify({
+            "success": True,
+            "filename": unique_filename,
+            "message": random.choice(GENIE_RESPONSES["upload_prompt"])
+        })
+    
+    return jsonify({"error": "Invalid file type"}), 400
 
-def main():
-    args = [a.lower() for a in sys.argv[1:]]
-    if "setup" in args:
-        setup()
-        return
-    settings = login()
+@app.route('/api/process', methods=['POST'])
+def process_image():
+    data = request.json
+    filename = data.get('filename')
+    tool_name = data.get('tool')
+    
+    if not filename or not tool_name:
+        return jsonify({"error": "Missing parameters"}), 400
+    
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(input_path):
+        return jsonify({"error": "File not found"}), 404
+    
+    output_filename = output_path_from(filename, tool_name)
+    output_path = os.path.join(app.config['PROCESSED_FOLDER'], output_filename)
+    
+    try:
+        if tool_name == "ascii-art":
+            do_ascii_art(input_path, output_path)
+        else:
+            img = cv2.imread(input_path)
+            if img is None:
+                return jsonify({"error": "Unable to read image"}), 400
+            
+            if tool_name == "aesthetic-blur":
+                out = do_aesthetic_blur(img)
+            elif tool_name == "vintage-sepia":
+                out = do_vintage_sepia(img)
+            elif tool_name == "invert-colors":
+                out = do_invert_colors(img)
+            elif tool_name == "pixelate-8bit":
+                out = do_pixelate_8bit(img)
+            elif tool_name == "pencil-sketch":
+                out = do_pencil_sketch(img)
+            else:
+                return jsonify({"error": "Unknown tool"}), 400
+            
+            cv2.imwrite(output_path, out)
+        
+        success_msg = random.choice(GENIE_RESPONSES["success"])
+        tip = GENIE_RESPONSES["tips"].get(tool_name, "Looking great!")
+        
+        return jsonify({
+            "success": True,
+            "output_file": f"/processed/{output_filename}",
+            "message": f"{success_msg}\n\n💡 {tip}"
+        })
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    print(text2art("Gallery Genie", "cybermedium"))
-    print("Tell me what you want to do, and I'll suggest a Image Editing tool.")
-    if settings.get("login_count", 1) == 1:
-        print(
-            "Tip: Run `python app.py setup` anytime to change your name or reset the token."
-        )
+@app.route('/processed/<filename>')
+def processed_file(filename):
+    return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
 
-    while True:
-        print("\nDescribe your task (or 'q' to exit).")
-        query = input("> ").strip()
-        if query.lower() in ("q", "quit", "exit"):
-            sys.exit("Goodbye.")
-        if not query:
-            print("A short description helps pick the right Image Editing tool.")
-            continue
-        tool = suggest_tool(query)
-        path = prompt_path(settings)
-        process_image(tool["name"], path)
+@app.route('/api/genie-greet', methods=['GET'])
+def genie_greet():
+    return jsonify({
+        "message": random.choice(GENIE_RESPONSES["greeting"])
+    })
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
