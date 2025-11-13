@@ -9,6 +9,9 @@ from ascii_magic import AsciiArt
 from sentence_transformers import SentenceTransformer, util
 import torch
 
+# Force CPU-only to reduce GPU heat
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['PROCESSED_FOLDER'] = 'static/processed'
@@ -153,10 +156,15 @@ def find_best_tool(user_input: str) -> dict | None:
         best_idx = int(torch.argmax(similarities).item())
         best_score = float(similarities[best_idx].item())
         
-        return {
+        result = {
             "tool": TOOLS[best_idx],
             "confidence": best_score
         }
+        
+        # Clean up GPU memory after inference
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
+        
+        return result
     except Exception as e:
         return None
 
@@ -280,4 +288,4 @@ def genie_greet():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
