@@ -22,13 +22,15 @@
             --primary-dark: #4f46e5;
             --secondary: #ec4899;
             --accent: #f59e0b;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-lighter: #334155;
+            --bg-dark: #050816;
+            --bg-card: rgba(15, 23, 42, 0.85);
+            --bg-lighter: rgba(30, 41, 59, 0.85);
             --text-light: #f1f5f9;
             --text-muted: #94a3b8;
             --success: #10b981;
             --genie-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --border-subtle: rgba(148, 163, 184, 0.2);
+            --shadow-soft: 0 20px 50px rgba(5, 8, 22, 0.7);
         }
 
         body {
@@ -37,6 +39,9 @@
             color: var(--text-light);
             min-height: 100vh;
             overflow-x: hidden;
+            background-image: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08), transparent 55%),
+                radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.08), transparent 45%);
+            background-attachment: fixed;
         }
 
         .magic-bg {
@@ -46,7 +51,7 @@
             top: 0;
             left: 0;
             z-index: -1;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background: linear-gradient(135deg, #030712 0%, #111827 45%, #030712 100%);
         }
 
         .stars {
@@ -56,6 +61,8 @@
             top: 0;
             left: 0;
             z-index: -1;
+            pointer-events: none;
+            opacity: 0.7;
         }
 
         .star {
@@ -112,13 +119,15 @@
         .sidebar {
             width: 280px;
             background: var(--bg-card);
-            border-right: 2px solid rgba(99, 102, 241, 0.3);
+            border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 40px 20px;
-            box-shadow: 5px 0 30px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(18px);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
 
         .genie-icon {
@@ -160,8 +169,10 @@
             margin: 20px;
             margin-left: 0;
             border-radius: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            animation: glow 3s infinite;
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            transition: box-shadow 0.4s ease, transform 0.4s ease;
         }
 
         .chat-messages {
@@ -175,7 +186,8 @@
 
         .message {
             display: flex;
-            animation: slideIn 0.4s ease;
+            animation: slideIn 0.35s ease;
+            will-change: transform, opacity;
         }
 
         @keyframes slideIn {
@@ -233,24 +245,27 @@
             padding: 18px 24px;
             border-radius: 20px;
             line-height: 1.6;
+            transition: background 0.3s ease, border 0.3s ease;
         }
 
         .box-q {
-            width: 50%;
-            height: 60px;
+            width: 48%;
+            min-height: 56px;
             margin: 5px auto;
-            padding: 5px;
-            border: 1px var(--genie-gradient);
-            color: white;
-            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-light);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 0.85rem;
         }
 
         .box-q-cont {
             display: flex;
-            flex-direction: row;
-            column-count: 2;
-            column-gap: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
             text-align: center;
+            justify-content: center;
         }
 
         .message.genie .message-bubble {
@@ -268,10 +283,12 @@
         }
 
         .image-preview-msg {
-            border-radius: 15px;
+            border-radius: 18px;
             overflow: hidden;
-            margin-top: 10px;
-            background: rgba(0, 0, 0, 0.3);
+            margin-top: 12px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
         }
 
         .image-preview-msg img {
@@ -279,6 +296,16 @@
             max-height: 400px;
             object-fit: contain;
             display: block;
+        }
+
+        .image-label {
+            font-size: 0.9rem;
+            letter-spacing: 0.02em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .image-comparison {
@@ -317,8 +344,8 @@
         }
 
         .tool-option {
-            background: rgba(99, 102, 241, 0.2);
-            border: 2px solid rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.18);
+            border: 1px solid rgba(99, 102, 241, 0.35);
             border-radius: 12px;
             padding: 15px 10px;
             text-align: center;
@@ -334,8 +361,8 @@
 
         .tool-option.selected {
             background: var(--genie-gradient);
-            border-color: var(--secondary);
-            box-shadow: 0 5px 20px rgba(236, 72, 153, 0.4);
+            border-color: transparent;
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.35);
         }
 
         .tool-icon {
@@ -368,6 +395,7 @@
             font-family: 'Poppins', sans-serif;
             font-size: 0.95rem;
             flex: 1;
+            box-shadow: inset 0 0 0 0 transparent;
         }
 
         .btn-primary {
@@ -423,7 +451,7 @@
         .chat-input-area {
             padding: 25px 30px;
             background: var(--bg-lighter);
-            border-top: 2px solid rgba(99, 102, 241, 0.2);
+            border-top: 1px solid var(--border-subtle);
             display: flex;
             gap: 15px;
             align-items: center;
@@ -432,12 +460,12 @@
         .upload-btn {
             width: fit-content;
             height: fit-content;
-            padding: 10px;
-            border-radius: 10px;
-            background: var(--genie-gradient);
-            border: none;
+            padding: 12px 18px;
+            border-radius: 16px;
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(102, 126, 234, 0.4);
             color: white;
-            font-size: 1.3rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -446,7 +474,7 @@
             justify-content: center;
             flex-shrink: 0;
             margin-top: 5px;
-
+            box-shadow: 0 15px 35px rgba(88, 28, 135, 0.35);
         }
 
         .upload-btn:hover {
@@ -506,9 +534,9 @@
         }
 
         .typing-indicator {
-            display: flex;
+            display: inline-flex;
             gap: 5px;
-            padding: 15px 20px;
+            padding: 12px 20px;
         }
 
         .typing-dot {
@@ -605,6 +633,15 @@
                 max-width: 90%;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
 
@@ -664,6 +701,8 @@
         let currentUploadedFilename = null;
         let selectedTool = null;
         let conversationState = 'idle'; // idle, awaiting_tool_selection, processing
+        let scrollPending = false;
+        let uploadInProgress = false;
 
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
@@ -672,20 +711,42 @@
         const fileInput = document.getElementById('fileInput');
 
         const tools = {{ tools | tojson }};
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const initialPlaceholder = chatInput.placeholder;
+        const readyPlaceholder = "Ask me anything... (e.g., 'make it vintage')";
+
+        function setChatAvailability(isEnabled, placeholder = null) {
+            chatInput.disabled = !isEnabled;
+            sendBtn.disabled = !isEnabled;
+            if (placeholder !== null) {
+                chatInput.placeholder = placeholder;
+            }
+        }
+
+        setChatAvailability(false, initialPlaceholder);
 
         // Create stars
         const starsContainer = document.getElementById('stars');
-        for (let i = 0; i < 100; i++) {
+        const STAR_COUNT = prefersReducedMotion ? 40 : 80;
+        for (let i = 0; i < STAR_COUNT; i++) {
             const star = document.createElement('div');
             star.className = 'star';
             star.style.left = Math.random() * 100 + '%';
             star.style.top = Math.random() * 100 + '%';
-            star.style.animationDelay = Math.random() * 3 + 's';
+            star.style.animationDelay = prefersReducedMotion ? '0s' : Math.random() * 3 + 's';
             starsContainer.appendChild(star);
         }
 
-        function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        function scrollToBottom({ smooth = true } = {}) {
+            if (scrollPending) return;
+            scrollPending = true;
+            requestAnimationFrame(() => {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: smooth && !prefersReducedMotion ? 'smooth' : 'auto'
+                });
+                scrollPending = false;
+            });
         }
 
         function addGenieMessage(text, extraContent = null) {
@@ -751,12 +812,17 @@
             messageDiv.className = 'message genie image-message';
             messageDiv.innerHTML = `
                 <div class="message-content">
-                    <div class="image-preview-msg">
-                        <img src="${imageSrc}" alt="${label}">
+                    <div class="avatar"><i class="bi bi-stars"></i></div>
+                    <div class="message-bubble">
+                        <div class="image-label"><i class="bi bi-camera"></i> ${label || 'Uploaded image ready!'}</div>
+                        <div class="image-preview-msg">
+                            <img src="${imageSrc}" alt="${label}">
+                        </div>
                     </div>
                 </div>
             `;
-            uploadBtn.appendChild(messageDiv);
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
             return messageDiv;
         }
 
@@ -779,6 +845,8 @@
 
             const lastMessage = chatMessages.lastElementChild;
             const bubble = lastMessage.querySelector('.message-bubble');
+            bubble.querySelector('#toolsSelector')?.remove();
+            bubble.querySelector('.action-buttons')?.remove();
             bubble.insertAdjacentHTML('beforeend', selectorHtml);
 
             // Add click handlers
@@ -835,6 +903,7 @@
                             <div class="comparison-box">
                                 <div class="comparison-label">Original</div>
                                 <img src="/static/uploads/${currentUploadedFilename}" alt="Original">
+
                             </div>
                             <div class="comparison-box">
                                 <div class="comparison-label">Transformed ✨</div>
@@ -845,11 +914,13 @@
 
                     addGenieMessage(data.message, comparisonHtml);
                     addGenieMessage("Want to try another effect? Just select a different tool, or upload a new image! 🎨");
+                    selectedTool = null;
                 } else {
                     addGenieMessage("Oh no! The magic failed this time. Please try again! 🪄");
                 }
             } catch (error) {
                 loadingMsg.remove();
+
                 addGenieMessage("Something went wrong during transformation. Let's try again! ✨");
             } finally {
                 conversationState = 'idle';
@@ -869,6 +940,9 @@
             const formData = new FormData();
             formData.append('file', file);
 
+            uploadInProgress = true;
+            conversationState = 'uploading';
+            setChatAvailability(false, 'Uploading your image...');
             showTypingIndicator();
 
             try {
@@ -886,19 +960,29 @@
 
                     addGenieMessage("Perfect! Now tell me what kind of transformation you'd like", '');
                     // Enable chat input after image upload
-                    chatInput.disabled = false;
-                    chatInput.placeholder = "Ask me anything... (e.g., 'make it vintage')";
-                    sendBtn.disabled = false;
+                    setChatAvailability(true, readyPlaceholder);
+                    conversationState = 'idle';
+                    chatInput.focus();
+                } else {
+                    addGenieMessage(data.error || "I couldn't upload that image. Please try again! ⚠️");
+                    conversationState = currentUploadedFilename ? 'idle' : 'idle';
+                    setChatAvailability(Boolean(currentUploadedFilename), currentUploadedFilename ? readyPlaceholder : initialPlaceholder);
                 }
             } catch (error) {
                 hideTypingIndicator();
                 addGenieMessage("Oops! Something went wrong with the upload. Please try again! 🔮");
+                conversationState = currentUploadedFilename ? 'idle' : 'idle';
+                setChatAvailability(Boolean(currentUploadedFilename), currentUploadedFilename ? readyPlaceholder : initialPlaceholder);
+            }
+            finally {
+                uploadInProgress = false;
+                fileInput.value = '';
             }
         }
 
         async function sendMessage() {
             const message = chatInput.value.trim();
-            if (!message || !currentUploadedFilename) return;
+            if (!message || !currentUploadedFilename || chatInput.disabled) return;
 
             addUserMessage(message);
             chatInput.value = '';
@@ -921,6 +1005,7 @@
                     addGenieMessage(`Confirm adding <strong>${data.tool.title}</strong> to your image?`, `
                         <div class="action-buttons">
                             <button class="btn btn-secondary" onclick="addToolSelector()">Choose Different Tool</button>
+
                             <button class="btn btn-primary" onclick="applyTransformation()">✨ Apply Now!</button>
                         </div>
                     `);

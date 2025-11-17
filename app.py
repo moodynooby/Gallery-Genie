@@ -1,5 +1,9 @@
 import json
 import os
+
+# Force CPU-only before torch initializes CUDA backends (reduces dGPU heat)
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import random
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -10,8 +14,10 @@ from sentence_transformers import SentenceTransformer, util
 import torch
 import threading
 
-# Force CPU-only to reduce GPU heat
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+if hasattr(torch, "set_num_threads"):
+    torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "2")))
+if hasattr(torch, "set_num_interop_threads"):
+    torch.set_num_interop_threads(1)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -64,6 +70,8 @@ TOOLS = [
 ]
 
 _model = None
+_tool_embeddings = None
+_tool_embedding_lock = threading.Lock()
 
 GENIE_RESPONSES = {
     "greeting": [
@@ -106,6 +114,23 @@ def get_model():
     if _model is None:
         _model = SentenceTransformer('all-MiniLM-L6-v2')
     return _model
+
+
+def get_tool_embeddings():
+    """Cache tool description embeddings to avoid re-encoding each request."""
+    global _tool_embeddings
+    if _tool_embeddings is None:
+        with _tool_embedding_lock:
+            if _tool_embeddings is None:
+                model = get_model()
+                tool_descriptions = [t["description"] for t in TOOLS]
+                with torch.no_grad():
+                    _tool_embeddings = model.encode(
+                        tool_descriptions,
+                        convert_to_tensor=True,
+                        normalize_embeddings=True,
+                    )
+    return _tool_embeddings
 
 
 # Preload the model in a background thread so it's warmed before the first query.
@@ -164,21 +189,22 @@ def find_best_tool(user_input: str) -> dict | None:
     
     try:
         model = get_model()
-        query_embedding = model.encode(text, convert_to_tensor=True)
-        tool_descriptions = [t["description"] for t in TOOLS]
-        tool_embeddings = model.encode(tool_descriptions, convert_to_tensor=True)
+        tool_embeddings = get_tool_embeddings()
+        with torch.no_grad():
+            query_embedding = model.encode(
+                text,
+                convert_to_tensor=True,
+                normalize_embeddings=True,
+            )
         similarities = util.cos_sim(query_embedding, tool_embeddings)[0]
         best_idx = int(torch.argmax(similarities).item())
         best_score = float(similarities[best_idx].item())
-        
+
         result = {
             "tool": TOOLS[best_idx],
             "confidence": best_score
         }
-        
-        # Clean up GPU memory after inference
-        torch.cuda.empty_cache() if torch.cuda.is_available() else None
-        
+
         return result
     except Exception as e:
         return None
@@ -303,4 +329,4 @@ def genie_greet():
     })
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
