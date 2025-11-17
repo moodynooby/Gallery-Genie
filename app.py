@@ -1,23 +1,11 @@
-import json
 import os
-
-# Force CPU-only before torch initializes CUDA backends (reduces dGPU heat)
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
 import random
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, send_from_directory
 import cv2
+import numpy as np
 from ascii_magic import AsciiArt
-from sentence_transformers import SentenceTransformer, util
-import torch
-import threading
-
-if hasattr(torch, "set_num_threads"):
-    torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "2")))
-if hasattr(torch, "set_num_interop_threads"):
-    torch.set_num_interop_threads(1)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -34,117 +22,157 @@ TOOLS = [
     {
         "name": "ascii-art",
         "title": "ASCII Art",
-        "description": "Convert images to ASCII text art with monospaced characters. Creates retro terminal-style artwork with grayscale text representation. Perfect for vintage computer aesthetics and text-based visuals.",
-        "icon": '<i class="bi bi-code-square"></i>'
+        "description": "Convert an image into ASCII text art with monospaced characters. Creates retro terminal-style artwork with grayscale text representation and text-only pixels, perfect for vintage computer aesthetics and text-based visuals.",
+        "icon": '<i class="bi bi-code-square"></i>',
+        "keywords": ["ascii", "text", "code", "terminal", "retro", "vintage", "computer"]
     },
     {
         "name": "aesthetic-blur",
         "title": "Aesthetic Blur",
-        "description": "Apply Gaussian blur for soft focus dreamy effect. Creates smooth blurred background with gentle bokeh. `Great `for romantic portraits, calming visuals, and reducing sharp details.",
-        "icon": '<i class="bi bi-droplet-half"></i>'
+        "description": "Apply a soft Gaussian blur filter for a dreamy out-of-focus look. Creates smooth blurred backgrounds with gentle bokeh and softened details, great for portraits, calming visuals, and hiding distractions.",
+        "icon": '<i class="bi bi-droplet-half"></i>',
+        "keywords": ["blur", "soft", "dreamy", "bokeh", "out of focus", "smooth", "calming"]
     },
     {
         "name": "vintage-sepia",
         "title": "Vintage Sepia",
-        "description": "Add warm sepia tones for old photograph look. Creates nostalgic vintage film aesthetic with brownish warm colors. Perfect for antique appearance, historical feel, and retro photography style.",
-        "icon": '<i class="bi bi-camera-reels"></i>'
+        "description": "Add warm sepia tones for an old photograph look. Creates a nostalgic vintage film aesthetic with brownish warm colors, perfect for antique appearance, historical feeling, and retro photography style.",
+        "icon": '<i class="bi bi-camera-reels"></i>',
+        "keywords": ["sepia", "vintage", "old", "antique", "retro", "nostalgic", "brown", "warm"]
     },
     {
         "name": "invert-colors",
         "title": "Evil Self",
-        "description": "Invert all colors to create negative image with high contrast. Makes dark areas bright and vice versa. Ideal for cyberpunk neon aesthetic, x-ray effect, and surreal artistic look.",
-        "icon": '<i class="bi bi-palette"></i>'
+        "description": "Invert all colors to create a high-contrast negative image. Makes dark areas bright and bright areas dark, ideal for cyberpunk neon aesthetics, x-ray style effects, and surreal artistic looks.",
+        "icon": '<i class="bi bi-palette"></i>',
+        "keywords": ["invert", "negative", "evil", "cyberpunk", "neon", "x-ray", "opposite"]
     },
     {
         "name": "pixelate-8bit",
         "title": "8-bit Pixelate",
-        "description": "Create chunky pixelated mosaic with retro 8-bit video game style. Reduces image to low resolution blocky pixels. Perfect for pixel art, retro gaming aesthetic, and minimalist geometric look.",
-        "icon": '<i class="bi bi-grid-3x3"></i>'
+        "description": "Create a chunky pixelated mosaic with a retro 8-bit video game style. Reduces the image to low-resolution blocky pixels, perfect for pixel art, retro gaming aesthetics, and minimalist geometric looks.",
+        "icon": '<i class="bi bi-grid-3x3"></i>',
+        "keywords": ["pixel", "8bit", "8-bit", "retro", "game", "chunky", "blocky", "mosaic"]
     },
     {
         "name": "pencil-sketch",
         "title": "Pencil Sketch",
-        "description": "Transform photo into hand-drawn pencil sketch with artistic edges. Creates black and white drawing effect with sketchy lines. Great for artistic portraits, illustration style, and charcoal drawing look.",
-        "icon": '<i class="bi bi-pencil"></i>'
+        "description": "Transform a photo into a hand-drawn pencil sketch with artistic edges. Creates a black and white drawing effect with sketchy lines and shading, great for artistic portraits, illustration styles, and charcoal drawing looks.",
+        "icon": '<i class="bi bi-pencil"></i>',
+        "keywords": ["sketch", "pencil", "drawing", "artistic", "hand drawn", "charcoal", "black white"]
+    },
+    {
+        "name": "oil-painting",
+        "title": "Oil Painting",
+        "description": "Transform your image into a beautiful oil painting with rich textures and brush strokes. Creates an artistic painted look with smooth color blending and artistic brush effects, perfect for classic art styles.",
+        "icon": '<i class="bi bi-paint-bucket"></i>',
+        "keywords": ["oil", "painting", "paint", "artistic", "brush", "canvas", "art"]
+    },
+    {
+        "name": "cartoon-anime",
+        "title": "Cartoon Style",
+        "description": "Convert your photo into a vibrant cartoon or anime style with bold colors and smooth edges. Creates a fun animated look with enhanced colors and simplified details, great for playful portraits and fun visuals.",
+        "icon": '<i class="bi bi-palette-fill"></i>',
+        "keywords": ["cartoon", "anime", "animated", "comic", "fun", "colorful", "bold"]
+    },
+    {
+        "name": "black-white",
+        "title": "Black & White",
+        "description": "Convert your image to classic black and white photography. Creates timeless monochrome images with proper grayscale conversion, perfect for elegant portraits and dramatic compositions.",
+        "icon": '<i class="bi bi-circle-half"></i>',
+        "keywords": ["black", "white", "grayscale", "monochrome", "bw", "classic", "timeless"]
+    },
+    {
+        "name": "emboss",
+        "title": "Emboss",
+        "description": "Apply an embossed 3D effect that makes your image look like it's carved in stone or metal. Creates a raised relief effect with depth and dimension, great for textural and artistic looks.",
+        "icon": '<i class="bi bi-layers"></i>',
+        "keywords": ["emboss", "3d", "relief", "texture", "depth", "carved", "raised"]
+    },
+    {
+        "name": "edge-detection",
+        "title": "Edge Detection",
+        "description": "Extract and highlight the edges in your image for a technical line art look. Creates a high-contrast outline effect showing only the important edges and contours, perfect for technical drawings.",
+        "icon": '<i class="bi bi-diagram-3"></i>',
+        "keywords": ["edge", "outline", "contour", "line", "technical", "drawing", "detection"]
+    },
+    {
+        "name": "watercolor",
+        "title": "Watercolor",
+        "description": "Transform your image into a beautiful watercolor painting with soft color bleeding and artistic washes. Creates a dreamy painted effect with soft edges and flowing colors, perfect for artistic portraits.",
+        "icon": '<i class="bi bi-water"></i>',
+        "keywords": ["watercolor", "water", "paint", "soft", "flowing", "artistic", "dreamy"]
+    },
+    {
+        "name": "posterize",
+        "title": "Posterize",
+        "description": "Reduce the number of colors to create a bold posterized effect. Creates vibrant high-contrast images with limited color palettes, perfect for pop art styles and bold graphic designs.",
+        "icon": '<i class="bi bi-grid-fill"></i>',
+        "keywords": ["posterize", "poster", "pop art", "bold", "vibrant", "limited colors", "graphic"]
+    },
+    {
+        "name": "neon-glow",
+        "title": "Neon Glow",
+        "description": "Add a vibrant neon glow effect to your image with bright colors and glowing edges. Creates a cyberpunk aesthetic with electric colors and glowing highlights, perfect for night scenes and futuristic looks.",
+        "icon": '<i class="bi bi-lightning-fill"></i>',
+        "keywords": ["neon", "glow", "cyberpunk", "electric", "bright", "futuristic", "night"]
+    },
+    {
+        "name": "mirror-horizontal",
+        "title": "Mirror Flip",
+        "description": "Flip your image horizontally to create a mirror reflection effect. Creates a flipped version of your image, great for creating symmetrical compositions and artistic reflections.",
+        "icon": '<i class="bi bi-arrow-left-right"></i>',
+        "keywords": ["mirror", "flip", "horizontal", "reflect", "symmetry", "reverse", "mirrored"]
+    },
+    {
+        "name": "color-boost",
+        "title": "Color Boost",
+        "description": "Enhance and boost the colors in your image for a vibrant, saturated look. Increases color intensity and saturation to make your image pop with vivid, eye-catching colors.",
+        "icon": '<i class="bi bi-brightness-high-fill"></i>',
+        "keywords": ["color", "boost", "saturate", "vibrant", "intense", "bright", "enhance"]
     },
 ]
 
-_model = None
-_tool_embeddings = None
-_tool_embedding_lock = threading.Lock()
-
 GENIE_RESPONSES = {
     "greeting": [
-        "Greetings, creative soul! I'm Gallery Genie, your magical image transformation companion! ✨",
-        "Welcome to my mystical gallery! I'm Gallery Genie, here to grant your artistic wishes! 🧞",
-        "Hey there, art lover! Gallery Genie at your service, ready to make some magic! 🎨",
+        "✨ Greetings, mortal! I am Gallery Genie, master of image transformations! Upload an image and watch me work my magic!",
+        "🧞‍♂️ Ah, a new visitor! I am the Gallery Genie, and I grant wishes for beautiful image effects. Show me your image!",
+        "🌟 Welcome, seeker of visual wonders! I am Gallery Genie, and I shall transform your images with mystical powers!",
     ],
     "upload_prompt": [
-        "Upload an image and let me work my magic! What transformation do you have in mind?",
-        "Drop your image here and tell me your vision - I'll make it reality!",
-        "Ready to create something amazing? Upload an image and describe your dream effect!",
+        "✨ Magnificent! Your image has been received. Now, what transformation shall I perform? Describe your wish or choose from my magical effects!",
+        "🧞‍♂️ Excellent! Your image is ready. Tell me your desire, or browse my collection of enchanting effects!",
+        "🌟 Splendid! The image is mine to transform. What artistic vision shall I bring to life?",
     ],
     "processing": [
-        "Ah, excellent choice! Let me weave some magic into your image... ✨",
-        "Wonderful! Casting my artistic spell on your image right now... 🪄",
-        "Perfect! Watch as I transform your image with a touch of magic... 🌟",
+        "✨ *waves hands mystically* Let me weave my magic upon your image...",
+        "🧞‍♂️ *rubs hands together* Working my genie powers... transforming as we speak!",
+        "🌟 *sparkles appear* The transformation begins! Watch the magic unfold...",
     ],
     "success": [
-        "Voilà! Your masterpiece is ready! What do you think? 🎨",
-        "Ta-da! I've worked my magic! Your transformed image awaits! ✨",
-        "Behold! Your image has been transformed by the power of Gallery Genie! 🌟",
-    ],
-    "suggestions": [
-        "May I suggest trying {} for a stunning effect?",
-        "How about {} to really make your image pop?",
-        "I think {} would look absolutely magical on this!",
+        "✨ Behold! Your wish has been granted! The transformation is complete!",
+        "🧞‍♂️ Ta-da! The magic is done! Your image has been transformed by my powers!",
+        "🌟 Voilà! The enchantment is complete! Your image now bears my mystical touch!",
     ],
     "tips": {
-        "ascii-art": "Pro tip: ASCII art works best with high-contrast images and portraits!",
-        "aesthetic-blur": "Try this on backgrounds for that dreamy bokeh effect!",
-        "vintage-sepia": "Perfect for giving your photos that nostalgic, timeless feel!",
-        "invert-colors": "This creates stunning cyberpunk vibes - especially great for night scenes!",
-        "pixelate-8bit": "Retro gaming aesthetic activated! Works best on colorful images!",
-        "pencil-sketch": "Turn any photo into art! Works wonderfully on well-lit portraits!",
+        "ascii-art": "✨ Pro tip: This spell works best with images that have strong contrast!",
+        "aesthetic-blur": "🧞‍♂️ This magic creates dreamy, ethereal backgrounds - perfect for portraits!",
+        "vintage-sepia": "🌟 A classic enchantment that brings nostalgic warmth to any image!",
+        "invert-colors": "✨ This creates a cyberpunk realm effect - especially powerful on night scenes!",
+        "pixelate-8bit": "🧞‍♂️ Retro gaming magic! Perfect for colorful, vibrant images!",
+        "pencil-sketch": "🌟 Transform portraits into artistic masterpieces with this spell!",
+        "oil-painting": "✨ Best cast upon detailed images for maximum artistic impact!",
+        "cartoon-anime": "🧞‍♂️ Fun and playful magic - perfect for portraits that need character!",
+        "black-white": "🌟 Timeless elegance through monochrome enchantment!",
+        "emboss": "✨ Creates depth and texture - great for artistic effects!",
+        "edge-detection": "🌟 Technical magic that works best on clear, well-defined images!",
+        "watercolor": "✨ Perfect for artistic portraits with soft, flowing colors!",
+        "posterize": "🧞‍♂️ Bold pop art magic - creates vibrant, eye-catching results!",
+        "neon-glow": "✨ Cyberpunk enchantment - most powerful on darker images!",
+        "mirror-horizontal": "🌟 Symmetry magic - try it for artistic compositions!",
+        "color-boost": "🧞‍♂️ Makes colors pop with vibrant intensity!",
     }
 }
-
-def get_model():
-    global _model
-    if _model is None:
-        _model = SentenceTransformer('all-MiniLM-L6-v2')
-    return _model
-
-
-def get_tool_embeddings():
-    """Cache tool description embeddings to avoid re-encoding each request."""
-    global _tool_embeddings
-    if _tool_embeddings is None:
-        with _tool_embedding_lock:
-            if _tool_embeddings is None:
-                model = get_model()
-                tool_descriptions = [t["description"] for t in TOOLS]
-                with torch.no_grad():
-                    _tool_embeddings = model.encode(
-                        tool_descriptions,
-                        convert_to_tensor=True,
-                        normalize_embeddings=True,
-                    )
-    return _tool_embeddings
-
-
-# Preload the model in a background thread so it's warmed before the first query.
-# This keeps startup responsive while loading the heavy SentenceTransformer.
-def _preload_model_background():
-    try:
-        print("Preloading sentence-transformers model in background...")
-        get_model()
-        print("Model preload complete.")
-    except Exception as e:
-        print("Model preload failed:", e)
-
-# Start preload in daemon thread at module import/startup.
-threading.Thread(target=_preload_model_background, daemon=True).start()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -182,32 +210,177 @@ def do_pencil_sketch(img):
     sketch = cv2.divide(gray, denom, scale=256.0)
     return cv2.cvtColor(sketch, cv2.COLOR_GRAY2BGR)
 
+def do_oil_painting(img):
+    # Oil painting effect using bilateral filter and color quantization
+    filtered = cv2.bilateralFilter(img, 9, 75, 75)
+    # Reduce colors for painting effect
+    data = filtered.reshape((-1, 3))
+    data = np.float32(data)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
+    _, labels, centers = cv2.kmeans(data, 8, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+    centers = np.uint8(centers)
+    return centers[labels.flatten()].reshape(img.shape)
+
+def do_cartoon_anime(img):
+    # Cartoon effect: bilateral filter + edge enhancement
+    filtered = cv2.bilateralFilter(img, 9, 300, 300)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.medianBlur(gray, 5)
+    edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 9)
+    edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    return cv2.bitwise_and(filtered, edges)
+
+def do_black_white(img):
+    return cv2.cvtColor(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
+
+def do_emboss(img):
+    kernel = np.array([[-2, -1, 0],
+                       [-1, 1, 1],
+                       [0, 1, 2]], dtype=np.float32)
+    embossed = cv2.filter2D(img, -1, kernel)
+    embossed = cv2.cvtColor(embossed, cv2.COLOR_BGR2GRAY)
+    return cv2.cvtColor(embossed, cv2.COLOR_GRAY2BGR)
+
+def do_edge_detection(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    return cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+
+def do_watercolor(img):
+    # Watercolor effect: multiple bilateral filters + slight blur
+    filtered = cv2.bilateralFilter(img, 9, 75, 75)
+    filtered = cv2.bilateralFilter(filtered, 9, 75, 75)
+    return cv2.GaussianBlur(filtered, (5, 5), 0)
+
+def do_posterize(img):
+    # Posterize: reduce color levels
+    img_float = img.astype(np.float32)
+    levels = 4
+    posterized = np.round(img_float / 255.0 * (levels - 1)) / (levels - 1) * 255.0
+    return posterized.astype(np.uint8)
+
+def do_neon_glow(img):
+    # Neon glow: edge detection + color enhancement
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    edges_colored = cv2.applyColorMap(edges, cv2.COLORMAP_HOT)
+    # Blend with original
+    return cv2.addWeighted(img, 0.7, edges_colored, 0.3, 0)
+
+def do_mirror_horizontal(img):
+    return cv2.flip(img, 1)
+
+def do_color_boost(img):
+    # Increase saturation
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv[:, :, 1] = cv2.multiply(hsv[:, :, 1], 1.5)  # Boost saturation
+    hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+def fuzzy_match_score(text, target):
+    """Simple fuzzy matching score based on substring and character similarity"""
+    text = text.lower()
+    target = target.lower()
+    
+    # Exact match
+    if text == target:
+        return 100
+    
+    # Contains match
+    if text in target or target in text:
+        return 80
+    
+    # Word-by-word matching
+    text_words = set(text.split())
+    target_words = set(target.split())
+    if text_words & target_words:  # Intersection
+        return 60
+    
+    # Character similarity (simple ratio)
+    common_chars = sum(1 for c in text if c in target)
+    if len(target) > 0:
+        return int((common_chars / len(target)) * 40)
+    return 0
+
 def find_best_tool(user_input: str) -> dict | None:
-    text = (user_input or "").strip()
+    text = (user_input or "").strip().lower()
     if not text:
         return None
     
-    try:
-        model = get_model()
-        tool_embeddings = get_tool_embeddings()
-        with torch.no_grad():
-            query_embedding = model.encode(
-                text,
-                convert_to_tensor=True,
-                normalize_embeddings=True,
-            )
-        similarities = util.cos_sim(query_embedding, tool_embeddings)[0]
-        best_idx = int(torch.argmax(similarities).item())
-        best_score = float(similarities[best_idx].item())
-
-        result = {
-            "tool": TOOLS[best_idx],
-            "confidence": best_score
+    # Simple keyword matching - much lighter than sentence-transformers
+    best_tool = None
+    best_score = 0
+    
+    for tool in TOOLS:
+        score = 0
+        keywords = tool.get("keywords", [])
+        tool_name = tool.get("name", "").lower()
+        tool_title = tool.get("title", "").lower()
+        
+        # Check if tool name or title is mentioned
+        if tool_name.replace("-", " ") in text or tool_name.replace("-", "") in text:
+            score += 2
+        if tool_title in text:
+            score += 2
+        
+        # Check keywords
+        for keyword in keywords:
+            if keyword.lower() in text:
+                score += 1
+        
+        if score > best_score:
+            best_score = score
+            best_tool = tool
+    
+    if best_tool and best_score > 0:
+        return {
+            "tool": best_tool,
+            "confidence": min(best_score / max(len(best_tool.get("keywords", [])), 1), 1.0)
         }
+    
+    return None
 
-        return result
-    except Exception as e:
-        return None
+def fuzzy_search_tools(user_input: str, limit: int = 5) -> list:
+    """Fuzzy search to find multiple matching tools"""
+    text = (user_input or "").strip().lower()
+    if not text or len(text) < 2:
+        return []
+    
+    results = []
+    
+    for tool in TOOLS:
+        score = 0
+        tool_name = tool.get("name", "")
+        tool_title = tool.get("title", "")
+        keywords = tool.get("keywords", [])
+        
+        # Fuzzy match on title
+        title_score = fuzzy_match_score(text, tool_title)
+        score = max(score, title_score)
+        
+        # Fuzzy match on name
+        name_score = fuzzy_match_score(text, tool_name.replace("-", " "))
+        score = max(score, name_score)
+        
+        # Check keywords with fuzzy matching
+        for keyword in keywords:
+            keyword_score = fuzzy_match_score(text, keyword)
+            score = max(score, keyword_score)
+        
+        # Also check exact keyword matches (boost score)
+        for keyword in keywords:
+            if keyword.lower() in text:
+                score += 10
+        
+        if score > 20:  # Threshold for showing results
+            results.append({
+                "tool": tool,
+                "score": score
+            })
+    
+    # Sort by score descending and return top results
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return [r["tool"] for r in results[:limit]]
 
 @app.route('/')
 def index():
@@ -224,12 +397,17 @@ def chat():
             "type": "prompt"
         })
     
+    # First try exact/best match
     result = find_best_tool(message)
     
-    if result and result['confidence'] > 0.35:
+    if result and result['confidence'] > 0.2:
         tool = result['tool']
-        response = f"Got it! Based on your request, I'll use {tool['title']} - {tool['description'].split('.')[0]}. " \
-                  f"Would you like to proceed with this transformation?"
+        responses = [
+            f"✨ Ah, I sense you desire {tool['title']}! Shall I grant this wish?",
+            f"🧞‍♂️ Perfect! {tool['title']} would work wonders here. Apply this magic?",
+            f"🌟 Excellent choice! {tool['title']} it is! Ready to transform?",
+        ]
+        response = random.choice(responses)
         return jsonify({
             "response": response,
             "type": "suggestion",
@@ -237,11 +415,31 @@ def chat():
             "confidence": result['confidence']
         })
     else:
-        return jsonify({
-            "response": f"I couldn't quite understand which effect you'd like to apply. Here are the available tools to choose from:",
-            "type": "menu",
-            "tools": TOOLS
-        })
+        # Use fuzzy search to find multiple matches
+        fuzzy_results = fuzzy_search_tools(message, limit=5)
+        
+        if fuzzy_results:
+            responses = [
+                f"✨ I found {len(fuzzy_results)} magical effect(s) that might match your wish:",
+                f"🧞‍♂️ Behold! {len(fuzzy_results)} enchantments that could fulfill your desire:",
+                f"🌟 My powers reveal {len(fuzzy_results)} effects that may suit your needs:",
+            ]
+            return jsonify({
+                "response": random.choice(responses),
+                "type": "fuzzy_results",
+                "tools": fuzzy_results
+            })
+        else:
+            responses = [
+                "✨ Hmm, I'm not sure which magic you seek. Browse my collection of effects:",
+                "🧞‍♂️ Your wish is unclear to me. Choose from my magical effects:",
+                "🌟 I need more clarity! Select from my enchanted effects below:",
+            ]
+            return jsonify({
+                "response": random.choice(responses),
+                "type": "menu",
+                "tools": TOOLS
+            })
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
@@ -272,11 +470,17 @@ def process_image():
     data = request.json or {}
     filename = data.get('filename')
     tool_name = data.get('tool')
+    use_processed = data.get('use_processed', False)  # If True, use processed image as input
     
     if not filename or not tool_name:
         return jsonify({"error": "Missing parameters"}), 400
     
-    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    # Determine input path - either from uploads or processed folder
+    if use_processed:
+        input_path = os.path.join(app.config['PROCESSED_FOLDER'], filename)
+    else:
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
     if not os.path.exists(input_path):
         return jsonify({"error": "File not found"}), 404
     
@@ -301,18 +505,39 @@ def process_image():
                 out = do_pixelate_8bit(img)
             elif tool_name == "pencil-sketch":
                 out = do_pencil_sketch(img)
+            elif tool_name == "oil-painting":
+                out = do_oil_painting(img)
+            elif tool_name == "cartoon-anime":
+                out = do_cartoon_anime(img)
+            elif tool_name == "black-white":
+                out = do_black_white(img)
+            elif tool_name == "emboss":
+                out = do_emboss(img)
+            elif tool_name == "edge-detection":
+                out = do_edge_detection(img)
+            elif tool_name == "watercolor":
+                out = do_watercolor(img)
+            elif tool_name == "posterize":
+                out = do_posterize(img)
+            elif tool_name == "neon-glow":
+                out = do_neon_glow(img)
+            elif tool_name == "mirror-horizontal":
+                out = do_mirror_horizontal(img)
+            elif tool_name == "color-boost":
+                out = do_color_boost(img)
             else:
                 return jsonify({"error": "Unknown tool"}), 400
             
             cv2.imwrite(output_path, out)
         
         success_msg = random.choice(GENIE_RESPONSES["success"])
-        tip = GENIE_RESPONSES["tips"].get(tool_name, "Looking great!")
+        tip = GENIE_RESPONSES["tips"].get(tool_name, "")
         
         return jsonify({
             "success": True,
             "output_file": f"/processed/{output_filename}",
-            "message": f"{success_msg}\n\n💡 {tip}"
+            "message": success_msg,
+            "tip": tip
         })
     
     except Exception as e:

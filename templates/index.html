@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery Genie - AI Image Transformation Magic</title>
+    <title>Gallery Genie - AI Image Effects Lab</title>
      <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/128/1680/1680377.png"> 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap"
@@ -112,7 +112,14 @@
 
         .container {
             display: flex;
+            flex-direction: column;
             height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
             overflow: hidden;
         }
 
@@ -122,66 +129,138 @@
             border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
+            align-items: stretch;
+            justify-content: flex-start;
+            padding: 20px;
             box-shadow: var(--shadow-soft);
             backdrop-filter: blur(18px);
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            gap: 16px;
+            height: 100%;
+            overflow: hidden;
         }
 
         .genie-icon {
-            font-size: 5rem;
-            animation: float 4s ease-in-out infinite;
+            font-size: 2.5rem;
             display: inline-block;
-            margin-bottom: 20px;
-            background: var(--genie-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .genie-icon img {
+            width: 48px;
+            height: 48px;
         }
 
         .logo {
             font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
+            font-size: 1.5rem;
             background: var(--genie-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin: 10px 0 15px;
+            margin: 0 0 8px;
             text-align: center;
             line-height: 1.2;
         }
 
         .tagline {
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.3;
+            margin-bottom: 12px;
         }
 
         .chat-container {
-            flex: 1;
+            width: 300px;
             background: var(--bg-card);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin: 20px;
-            margin-left: 0;
-            border-radius: 30px;
-            box-shadow: var(--shadow-soft);
+            border-left: 1px solid var(--border-subtle);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--border-subtle);
-            transition: box-shadow 0.4s ease, transform 0.4s ease;
+        }
+
+        .canvas-panel {
+            flex: 1;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .canvas-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .canvas-body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .canvas-column {
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .canvas-label {
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .canvas-image-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.16), transparent 55%),
+                radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.12), transparent 55%);
+        }
+
+        .canvas-image-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .canvas-status {
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 30px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 8px;
         }
 
         .message {
@@ -211,41 +290,83 @@
         }
 
         .message-content {
-            max-width: 75%;
+            max-width: 85%;
+            min-width: 0;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            position: relative;
         }
 
         .message.user .message-content {
             flex-direction: row-reverse;
         }
 
-        .avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            flex-shrink: 0;
-            color: white;
-        }
-
-        .message.genie .avatar {
-            background: var(--genie-gradient);
-        }
-
-        .message.user .avatar {
-            background: var(--primary);
-        }
-
         .message-bubble {
-            padding: 18px 24px;
-            border-radius: 20px;
-            line-height: 1.6;
+            padding: 8px 12px;
+            border-radius: 10px;
+            line-height: 1.5;
+            font-size: 0.85rem;
             transition: background 0.3s ease, border 0.3s ease;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            position: relative;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .message-bubble strong {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .message-bubble em {
+            font-style: italic;
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .message-bubble br {
+            line-height: 1.4;
+        }
+
+        .message-bubble p {
+            margin: 0 0 6px 0;
+        }
+
+        .message-bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message.genie .message-bubble {
+            border-left: 2px solid rgba(99, 102, 241, 0.6);
+            padding-left: 10px;
+        }
+
+        .message.user .message-bubble {
+            border-right: 2px solid rgba(236, 72, 153, 0.6);
+            padding-right: 10px;
+        }
+
+        .message-bubble::before {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            top: 6px;
+        }
+
+        .message.genie .message-bubble::before {
+            left: -4px;
+            background: var(--genie-gradient);
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+        }
+
+        .message.user .message-bubble::before {
+            right: -4px;
+            background: var(--secondary);
+            box-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
         }
 
         .box-q {
@@ -270,12 +391,14 @@
 
         .message.genie .message-bubble {
             background: var(--bg-lighter);
-            border: 2px solid rgba(99, 102, 241, 0.3);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: var(--text-light);
         }
 
         .message.user .message-bubble {
             background: var(--genie-gradient);
             color: white;
+            border: 1px solid rgba(236, 72, 153, 0.3);
         }
 
         .image-message {
@@ -336,18 +459,47 @@
             font-weight: 600;
         }
 
-        .tools-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+        .sidebar-tools {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             gap: 12px;
-            margin-top: 15px;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+
+        .sidebar-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .tools-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            max-height: 400px;
         }
 
         .tool-option {
             background: rgba(99, 102, 241, 0.18);
             border: 1px solid rgba(99, 102, 241, 0.35);
-            border-radius: 12px;
-            padding: 15px 10px;
+            border-radius: 10px;
+            padding: 10px 6px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -366,8 +518,8 @@
         }
 
         .tool-icon {
-            font-size: 2rem;
-            margin-bottom: 5px;
+            font-size: 1.5rem;
+            margin-bottom: 4px;
         }
 
         .tool-icon i {
@@ -375,8 +527,54 @@
         }
 
         .tool-name {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: 600;
+        }
+
+        .chat-tool-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chat-tool-option {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-tool-option:hover {
+            background: rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .chat-tool-option-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .chat-tool-option-text {
+            flex: 1;
+        }
+
+        .chat-tool-option-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .chat-tool-option-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.3;
         }
 
         .action-buttons {
@@ -386,16 +584,53 @@
         }
 
         .btn {
-            padding: 12px 24px;
-            border-radius: 20px;
+            padding: 10px 16px;
+            border-radius: 12px;
             border: none;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: 'Poppins', sans-serif;
-            font-size: 0.95rem;
-            flex: 1;
+            font-size: 0.85rem;
+            width: 100%;
             box-shadow: inset 0 0 0 0 transparent;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            width: auto;
+        }
+
+        .effect-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary-small {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--text-light);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-secondary-small:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: var(--primary);
+        }
+
+        .canvas-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
         }
 
         .btn-primary {
@@ -449,32 +684,28 @@
         }
 
         .chat-input-area {
-            padding: 25px 30px;
+            padding: 12px;
             background: var(--bg-lighter);
             border-top: 1px solid var(--border-subtle);
             display: flex;
-            gap: 15px;
+            gap: 8px;
             align-items: center;
         }
 
         .upload-btn {
-            width: fit-content;
-            height: fit-content;
-            padding: 12px 18px;
-            border-radius: 16px;
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
             background: rgba(102, 126, 234, 0.15);
             border: 1px solid rgba(102, 126, 234, 0.4);
             color: white;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
-            flex-shrink: 0;
-            margin-top: 5px;
-            box-shadow: 0 15px 35px rgba(88, 28, 135, 0.35);
         }
 
         .upload-btn:hover {
@@ -484,13 +715,13 @@
 
         .chat-input {
             flex: 1;
-            padding: 15px 20px;
-            border-radius: 25px;
-            border: 2px solid var(--primary);
+            padding: 10px 14px;
+            border-radius: 16px;
+            border: 1px solid var(--primary);
             background: var(--bg-card);
             color: var(--text-light);
             font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
+            font-size: 0.85rem;
             outline: none;
             transition: all 0.3s ease;
         }
@@ -507,13 +738,13 @@
         }
 
         .send-btn {
-            width: 50px;
-            height: 50px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: var(--genie-gradient);
             border: none;
             color: white;
-            font-size: 1.3rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -650,48 +881,75 @@
     <div class="stars" id="stars"></div>
 
     <div class="container">
-        <div class="sidebar" id="sidebar">
-            <div class="genie-icon"><img src="https://cdn-icons-png.flaticon.com/128/1680/1680377.png"></div>
-            <h1 class="logo">Gallery Genie</h1>
-            <p class="tagline">Your AI-Powered Image Transformation Companion</p>
-            <input type="file" id="fileInput" accept="image/*" style="display: none;">
-            <br>
-            <button class="upload-btn" id="uploadBtn" title="Upload Image"><i class="bi bi-image-fill"></i>Upload
-                Image</button>
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <div class="genie-icon"><img src="https://cdn-icons-png.flaticon.com/128/1680/1680377.png"></div>
+                <h1 class="logo">Gallery Genie</h1>
+                <p class="tagline">AI Image Effects Lab</p>
 
-        </div>
+                <div class="sidebar-tools">
+                    <div class="sidebar-section-title">All Effects</div>
+                    <div id="toolsSidebar" class="tools-selector"></div>
+                </div>
 
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
-                <div class="message genie">
-                    <div class="message-content">
-                        <div class="avatar"><i class="bi bi-megaphone"></i></div>
-                        <div class="message-bubble">
-                            <strong>Welcome, creative soul!</strong> ✨<br><br>
-                            I'm Gallery Genie, your magical image transformation companion!<br><br>
-                            <i class="bi bi-image"></i> Upload an image to begin<br>
-                            <i class="bi bi-chat-dots"></i> Tell me what effect you want (e.g., "make it vintage")<br>
-                            <i class="bi bi-magic"></i> Watch me work my magic!
-                            <h3>Pss... Here's What I can do</h3>
-
-                            <div class="box-q-cont">
-                                <p class="box-q">Evil Self</p>
-                                <p class="box-q">8-bit Pixelate</p>
-                                <p class="box-q">Pencil Sketch</p>
-                                <p class="box-q">Ascii Art</p>
-                                <p class="box-q">Aesthetic Blur</p>
-                                <p class="box-q">Vintage Sepia</p>
-                            </div>
-
-                        </div>
+                <div class="sidebar-bottom">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <button class="upload-btn" id="uploadBtn" title="Upload Image"><i class="bi bi-image-fill"></i>Upload Image</button>
+                    <button class="btn btn-primary sidebar-apply-btn" id="applyToolBtn" disabled>Apply Effect</button>
+                    <div class="canvas-actions" id="canvasActions" style="display: none;">
+                        <button class="btn-secondary-small" id="useResultBtn" title="Use this result as input for next effect">
+                            <i class="bi bi-arrow-right-circle"></i> Use Result
+                        </button>
+                        <button class="btn-secondary-small" id="resetOriginalBtn" title="Reset to original image">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div class="chat-input-area">
-                <input type="text" class="chat-input" id="chatInput"
-                    placeholder="Upload an image first to start chatting..." disabled>
-                <button class="send-btn" id="sendBtn" disabled><i class="bi bi-send-fill"></i></button>
+            <div class="canvas-panel">
+                <div class="canvas-header">
+                    <div class="canvas-title">Image Preview</div>
+                </div>
+                <div class="canvas-body">
+                    <div class="canvas-column">
+                        <div class="canvas-label">Original</div>
+                        <div class="canvas-image-wrapper">
+                            <img id="originalImage" class="hidden" alt="Original preview">
+                        </div>
+                    </div>
+                    <div class="canvas-column">
+                        <div class="canvas-label">Transformed</div>
+                        <div class="canvas-image-wrapper">
+                            <img id="processedImage" class="hidden" alt="Transformed preview">
+                        </div>
+                    </div>
+                </div>
+                <div class="canvas-status" id="canvasStatus">Upload an image to start.</div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message genie">
+                        <div class="message-content">
+                            <div class="message-bubble">
+                                ✨ <strong>Greetings! I am Gallery Genie!</strong><br><br>
+                                I grant wishes for magical image transformations! Here's how to use my powers:<br><br>
+                                📸 <strong>Step 1:</strong> Upload an image using the button above<br>
+                                🎨 <strong>Step 2:</strong> Choose an effect from the sidebar, or describe what you want in chat<br>
+                                ✨ <strong>Step 3:</strong> I'll transform your image with mystical magic!<br><br>
+                                You can chain effects together - use "Use Result" to apply multiple transformations!<br><br>
+                                <em>What image shall I transform for you today?</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chatInput"
+                        placeholder="Describe your wish or upload an image..." disabled>
+                    <button class="send-btn" id="sendBtn" disabled><i class="bi bi-send-fill"></i></button>
+                </div>
             </div>
         </div>
     </div>
@@ -712,8 +970,8 @@
 
         const tools = {{ tools | tojson }};
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const initialPlaceholder = chatInput.placeholder;
-        const readyPlaceholder = "Ask me anything... (e.g., 'make it vintage')";
+        const initialPlaceholder = "Describe your wish or upload an image...";
+        const readyPlaceholder = "Describe what effect you want, or choose from sidebar...";
 
         function setChatAvailability(isEnabled, placeholder = null) {
             chatInput.disabled = !isEnabled;
@@ -723,7 +981,8 @@
             }
         }
 
-        setChatAvailability(false, initialPlaceholder);
+        // Chat can be used even without image (for suggestions)
+        setChatAvailability(true, initialPlaceholder);
 
         // Create stars
         const starsContainer = document.getElementById('stars');
@@ -755,7 +1014,6 @@
 
             let content = `
                 <div class="message-content">
-                    <div class="avatar"><i class="bi bi-stars"></i></div>
                     <div class="message-bubble">
                         ${text}
                         ${extraContent || ''}
@@ -774,7 +1032,6 @@
             messageDiv.className = 'message user';
             messageDiv.innerHTML = `
                 <div class="message-content">
-                    <div class="avatar"><i class="bi bi-person-fill"></i></div>
                     <div class="message-bubble">${text}</div>
                 </div>
             `;
@@ -788,7 +1045,6 @@
             typing.id = 'typingIndicator';
             typing.innerHTML = `
                 <div class="message-content">
-                    <div class="avatar"><i class="bi bi-stars"></i></div>
                     <div class="message-bubble">
                         <div class="typing-indicator">
                             <div class="typing-dot"></div>
@@ -812,7 +1068,6 @@
             messageDiv.className = 'message genie image-message';
             messageDiv.innerHTML = `
                 <div class="message-content">
-                    <div class="avatar"><i class="bi bi-stars"></i></div>
                     <div class="message-bubble">
                         <div class="image-label"><i class="bi bi-camera"></i> ${label || 'Uploaded image ready!'}</div>
                         <div class="image-preview-msg">
@@ -826,7 +1081,34 @@
             return messageDiv;
         }
 
+        function selectToolFromChat(toolName, toolTitle) {
+            selectedTool = toolName;
+            const applyBtn = document.getElementById('applyToolBtn');
+            
+            // Highlight in sidebar
+            document.querySelectorAll('.tool-option').forEach(o => {
+                if (o.dataset.tool === selectedTool) {
+                    o.classList.add('selected');
+                } else {
+                    o.classList.remove('selected');
+                }
+            });
+            
+            if (applyBtn) {
+                applyBtn.disabled = false;
+            }
+            
+            if (currentUploadedFilename) {
+                    addGenieMessage(`✨ Excellent choice! ${toolTitle} is selected. Click "Apply Effect" and watch me work my magic!`);
+            } else {
+                    addGenieMessage(`✨ ${toolTitle} is ready! First, grant me an image to transform with this magic!`);
+            }
+        }
+
         function addToolSelector() {
+            const sidebar = document.getElementById('toolsSidebar');
+            if (!sidebar) return;
+
             const toolsHtml = tools.map(tool => `
                 <div class="tool-option" data-tool="${tool.name}">
                     <div class="tool-icon">${tool.icon}</div>
@@ -834,22 +1116,8 @@
                 </div>
             `).join('');
 
-            const selectorHtml = `
-                <div class="tools-selector" id="toolsSelector">
-                    ${toolsHtml}
-                </div>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" id="applyToolBtn" disabled>✨ Apply Transformation</button>
-                </div>
-            `;
+            sidebar.innerHTML = toolsHtml;
 
-            const lastMessage = chatMessages.lastElementChild;
-            const bubble = lastMessage.querySelector('.message-bubble');
-            bubble.querySelector('#toolsSelector')?.remove();
-            bubble.querySelector('.action-buttons')?.remove();
-            bubble.insertAdjacentHTML('beforeend', selectorHtml);
-
-            // Add click handlers
             document.querySelectorAll('.tool-option').forEach(option => {
                 option.addEventListener('click', () => {
                     document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
@@ -859,12 +1127,6 @@
                     if (applyBtn) applyBtn.disabled = false;
                 });
             });
-
-            const applyBtn = document.getElementById('applyToolBtn');
-            if (applyBtn) {
-                applyBtn.addEventListener('click', applyTransformation);
-            }
-            scrollToBottom();
         }
 
         async function applyTransformation() {
@@ -875,12 +1137,18 @@
             if (applyBtn) applyBtn.disabled = true;
 
             const toolName = tools.find(t => t.name === selectedTool)?.title || selectedTool;
-            addGenieMessage(`🪄 Applying ${toolName}... Watch the magic happen!`);
+            const processingMsgs = [
+                "✨ *waves hands mystically* Let me weave my magic upon your image...",
+                "🧞‍♂️ *rubs hands together* Working my genie powers... transforming as we speak!",
+                "🌟 *sparkles appear* The transformation begins! Watch the magic unfold...",
+            ];
+            const processingMsg = processingMsgs[Math.floor(Math.random() * processingMsgs.length)];
+            addGenieMessage(processingMsg);
 
             const loadingMsg = addGenieMessage(`
                 <div class="loading-indicator">
                     <div class="spinner"></div>
-                    <span>Casting magical spells...</span>
+                    <span>Processing...</span>
                 </div>
             `);
 
@@ -890,7 +1158,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         filename: currentUploadedFilename,
-                        tool: selectedTool
+                        tool: selectedTool,
+                        use_processed: usingProcessedAsInput
                     })
                 });
 
@@ -898,33 +1167,118 @@
                 loadingMsg.remove();
 
                 if (data.success) {
-                    const comparisonHtml = `
-                        <div class="image-comparison">
-                            <div class="comparison-box">
-                                <div class="comparison-label">Original</div>
-                                <img src="/static/uploads/${currentUploadedFilename}" alt="Original">
+                    const originalImg = document.getElementById('originalImage');
+                    const processedImg = document.getElementById('processedImage');
+                    const canvasStatus = document.getElementById('canvasStatus');
+                    const canvasActions = document.getElementById('canvasActions');
 
-                            </div>
-                            <div class="comparison-box">
-                                <div class="comparison-label">Transformed ✨</div>
-                                <img src="${data.output_file}" alt="Transformed">
-                            </div>
-                        </div>
-                    `;
+                    // Extract filename from output_file path
+                    const outputFilename = data.output_file.split('/').pop();
+                    
+                    // Update images
+                    if (originalImg) {
+                        // Show current input (either original or previous processed)
+                        if (usingProcessedAsInput) {
+                            originalImg.src = `/processed/${currentUploadedFilename}`;
+                        } else {
+                            originalImg.src = `/static/uploads/${originalUploadedFilename || currentUploadedFilename}`;
+                        }
+                        originalImg.classList.remove('hidden');
+                    }
+                    if (processedImg) {
+                        processedImg.src = data.output_file;
+                        processedImg.classList.remove('hidden');
+                    }
+                    if (canvasStatus) {
+                        canvasStatus.textContent = `${toolName} applied! Select another effect to continue.`;
+                    }
+                    if (canvasActions) {
+                        canvasActions.style.display = 'flex';
+                    }
 
-                    addGenieMessage(data.message, comparisonHtml);
-                    addGenieMessage("Want to try another effect? Just select a different tool, or upload a new image! 🎨");
+                    addGenieMessage(data.message);
+                    if (data.tip) {
+                        addGenieMessage(`💡 <strong>Genie's Tip:</strong> ${data.tip}`);
+                    }
+                    addGenieMessage("✨ Select another effect to continue the magic, or use 'Use Result' to chain transformations!");
+                    
+                    // Store the new processed filename for potential chaining
+                    currentUploadedFilename = outputFilename;
+                    usingProcessedAsInput = false; // Reset flag - user can choose to use result
                     selectedTool = null;
+                    
+                    // Clear tool selection
+                    document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
+                    if (applyBtn) applyBtn.disabled = true;
                 } else {
-                    addGenieMessage("Oh no! The magic failed this time. Please try again! 🪄");
+                    addGenieMessage("🧞‍♂️ Hmm, my magic failed this time. Let me try again!");
                 }
             } catch (error) {
                 loadingMsg.remove();
-
-                addGenieMessage("Something went wrong during transformation. Let's try again! ✨");
+                addGenieMessage("✨ Oops! Something went wrong with my magic. Please try again!");
             } finally {
                 conversationState = 'idle';
             }
+        }
+
+        function useResultAsInput() {
+            if (!currentUploadedFilename) return;
+            
+            usingProcessedAsInput = true;
+            const originalImg = document.getElementById('originalImage');
+            const processedImg = document.getElementById('processedImage');
+            const canvasStatus = document.getElementById('canvasStatus');
+            const originalLabel = document.querySelector('.canvas-column:first-child .canvas-label');
+            
+            if (originalImg && processedImg) {
+                // Move processed to original position
+                originalImg.src = processedImg.src;
+                processedImg.src = '';
+                processedImg.classList.add('hidden');
+            }
+            
+            if (originalLabel) {
+                originalLabel.textContent = "Current Input";
+            }
+            
+            if (canvasStatus) {
+                canvasStatus.textContent = "Using result as input. Select an effect to apply.";
+            }
+            
+            addGenieMessage("✨ Excellent choice! I shall use this result as the foundation for the next transformation. What effect shall I apply?");
+        }
+
+        function resetToOriginal() {
+            if (!originalUploadedFilename) return;
+            
+            usingProcessedAsInput = false;
+            currentUploadedFilename = originalUploadedFilename;
+            
+            const originalImg = document.getElementById('originalImage');
+            const processedImg = document.getElementById('processedImage');
+            const canvasStatus = document.getElementById('canvasStatus');
+            const canvasActions = document.getElementById('canvasActions');
+            const originalLabel = document.querySelector('.canvas-column:first-child .canvas-label');
+            
+            if (originalImg) {
+                originalImg.src = `/static/uploads/${originalUploadedFilename}`;
+                originalImg.classList.remove('hidden');
+            }
+            if (processedImg) {
+                processedImg.src = '';
+                processedImg.classList.add('hidden');
+            }
+            if (originalLabel) {
+                originalLabel.textContent = "Original";
+            }
+            if (canvasStatus) {
+                canvasStatus.textContent = "Reset to original. Select an effect to apply.";
+            }
+            if (canvasActions) {
+                canvasActions.style.display = 'none';
+            }
+            
+            addGenieMessage("✨ *snaps fingers* Reset complete! We're back to the original image. What transformation shall I perform?");
         }
 
         uploadBtn.addEventListener('click', () => fileInput.click());
@@ -942,7 +1296,7 @@
 
             uploadInProgress = true;
             conversationState = 'uploading';
-            setChatAvailability(false, 'Uploading your image...');
+            setChatAvailability(false, 'Uploading...');
             showTypingIndicator();
 
             try {
@@ -956,21 +1310,41 @@
 
                 if (data.success) {
                     currentUploadedFilename = data.filename;
-                    addImageMessage(`/static/uploads/${data.filename}`, `📸 Your image has been uploaded!`);
+                    originalUploadedFilename = data.filename; // Store original
+                    usingProcessedAsInput = false; // Reset
 
-                    addGenieMessage("Perfect! Now tell me what kind of transformation you'd like", '');
-                    // Enable chat input after image upload
+                    const originalImg = document.getElementById('originalImage');
+                    const processedImg = document.getElementById('processedImage');
+                    const canvasStatus = document.getElementById('canvasStatus');
+                    const canvasActions = document.getElementById('canvasActions');
+
+                    if (originalImg) {
+                        originalImg.src = `/static/uploads/${data.filename}`;
+                        originalImg.classList.remove('hidden');
+                    }
+                    if (processedImg) {
+                        processedImg.src = '';
+                        processedImg.classList.add('hidden');
+                    }
+                    if (canvasStatus) {
+                        canvasStatus.textContent = 'Image ready. Choose an effect or describe what you want.';
+                    }
+                    if (canvasActions) {
+                        canvasActions.style.display = 'none';
+                    }
+
+                    addGenieMessage(data.message);
                     setChatAvailability(true, readyPlaceholder);
                     conversationState = 'idle';
                     chatInput.focus();
                 } else {
-                    addGenieMessage(data.error || "I couldn't upload that image. Please try again! ⚠️");
+                    addGenieMessage("🧞‍♂️ I couldn't receive that image. Please try again, mortal!");
                     conversationState = currentUploadedFilename ? 'idle' : 'idle';
                     setChatAvailability(Boolean(currentUploadedFilename), currentUploadedFilename ? readyPlaceholder : initialPlaceholder);
                 }
             } catch (error) {
                 hideTypingIndicator();
-                addGenieMessage("Oops! Something went wrong with the upload. Please try again! 🔮");
+                addGenieMessage("✨ Something went wrong with the upload. Let me try again!");
                 conversationState = currentUploadedFilename ? 'idle' : 'idle';
                 setChatAvailability(Boolean(currentUploadedFilename), currentUploadedFilename ? readyPlaceholder : initialPlaceholder);
             }
@@ -982,7 +1356,7 @@
 
         async function sendMessage() {
             const message = chatInput.value.trim();
-            if (!message || !currentUploadedFilename || chatInput.disabled) return;
+            if (!message || chatInput.disabled) return;
 
             addUserMessage(message);
             chatInput.value = '';
@@ -1001,24 +1375,58 @@
 
                 if (data.type === 'suggestion' && data.tool) {
                     addGenieMessage(data.response);
-                    selectedTool = data.tool.name;
-                    addGenieMessage(`Confirm adding <strong>${data.tool.title}</strong> to your image?`, `
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" onclick="addToolSelector()">Choose Different Tool</button>
-
-                            <button class="btn btn-primary" onclick="applyTransformation()">✨ Apply Now!</button>
-                        </div>
-                    `);
+                    if (currentUploadedFilename) {
+                        selectedTool = data.tool.name;
+                        const applyBtn = document.getElementById('applyToolBtn');
+                        if (applyBtn) applyBtn.disabled = false;
+                        // Highlight the suggested tool in sidebar
+                        document.querySelectorAll('.tool-option').forEach(o => {
+                            if (o.dataset.tool === selectedTool) {
+                                o.classList.add('selected');
+                            } else {
+                                o.classList.remove('selected');
+                            }
+                        });
+                    } else {
+                        addGenieMessage("✨ First, grant me an image to work with! Upload one and I'll apply this magic!");
+                    }
+                } else if (data.type === 'fuzzy_results' && data.tools) {
+                    // Show fuzzy search results as clickable options
+                    const messageDiv = addGenieMessage(data.response);
+                    const bubble = messageDiv.querySelector('.message-bubble');
+                    if (bubble && data.tools.length > 0) {
+                        const toolsHtml = `
+                            <div class="chat-tool-options">
+                                ${data.tools.map(tool => `
+                                    <div class="chat-tool-option" data-tool-name="${tool.name}" data-tool-title="${tool.title}">
+                                        <div class="chat-tool-option-icon">${tool.icon}</div>
+                                        <div class="chat-tool-option-text">
+                                            <div class="chat-tool-option-title">${tool.title}</div>
+                                            <div class="chat-tool-option-desc">${tool.description.split('.')[0]}.</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        bubble.innerHTML += toolsHtml;
+                        
+                        // Add click handlers to tool options
+                        messageDiv.querySelectorAll('.chat-tool-option').forEach(option => {
+                            option.addEventListener('click', () => {
+                                const toolName = option.dataset.toolName;
+                                const toolTitle = option.dataset.toolTitle;
+                                selectToolFromChat(toolName, toolTitle);
+                            });
+                        });
+                    }
+                } else if (data.type === 'menu') {
+                    addGenieMessage(data.response + " Browse my collection of magical effects in the sidebar!");
                 } else {
                     addGenieMessage(data.response);
-                    addToolSelector();  
-                    conversationState = 'awaiting_tool_selection';
-
-
                 }
             } catch (error) {
                 hideTypingIndicator();
-                addGenieMessage("Oops! I'm having trouble hearing you. Try again! 👂");
+                addGenieMessage("🧞‍♂️ My powers are having trouble! Let me try again...");
             }
         }
 
@@ -1026,6 +1434,24 @@
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+
+        // Initialize tools in sidebar on load
+        addToolSelector();
+
+        const applyBtn = document.getElementById('applyToolBtn');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', applyTransformation);
+        }
+
+        const useResultBtn = document.getElementById('useResultBtn');
+        if (useResultBtn) {
+            useResultBtn.addEventListener('click', useResultAsInput);
+        }
+
+        const resetOriginalBtn = document.getElementById('resetOriginalBtn');
+        if (resetOriginalBtn) {
+            resetOriginalBtn.addEventListener('click', resetToOriginal);
+        }
 
         // Handle drag and drop on entire chat area
         chatMessages.addEventListener('dragover', (e) => {
