@@ -1,6 +1,0 @@
-{
-  "html.validate.scripts": false,
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
-}

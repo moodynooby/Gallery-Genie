@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gallery Genie - AI Image Effects Lab</title>
-     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/128/1680/1680377.png"> 
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/128/1680/1680377.png">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap"
         rel="stylesheet">
@@ -307,10 +307,7 @@
             line-height: 1.5;
             font-size: 0.85rem;
             transition: background 0.3s ease, border 0.3s ease;
-            word-wrap: break-word;
             overflow-wrap: break-word;
-            white-space: pre-wrap;
-            position: relative;
             max-width: 100%;
             box-sizing: border-box;
         }
@@ -866,7 +863,10 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
+
+            *,
+            *::before,
+            *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
@@ -894,10 +894,12 @@
 
                 <div class="sidebar-bottom">
                     <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                    <button class="upload-btn" id="uploadBtn" title="Upload Image"><i class="bi bi-image-fill"></i>Upload Image</button>
+                    <button class="upload-btn" id="uploadBtn" title="Upload Image"><i
+                            class="bi bi-image-fill"></i>Upload Image</button>
                     <button class="btn btn-primary sidebar-apply-btn" id="applyToolBtn" disabled>Apply Effect</button>
                     <div class="canvas-actions" id="canvasActions" style="display: none;">
-                        <button class="btn-secondary-small" id="useResultBtn" title="Use this result as input for next effect">
+                        <button class="btn-secondary-small" id="useResultBtn"
+                            title="Use this result as input for next effect">
                             <i class="bi bi-arrow-right-circle"></i> Use Result
                         </button>
                         <button class="btn-secondary-small" id="resetOriginalBtn" title="Reset to original image">
@@ -934,12 +936,17 @@
                         <div class="message-content">
                             <div class="message-bubble">
                                 ✨ <strong>Greetings! I am Gallery Genie!</strong><br><br>
-                                I grant wishes for magical image transformations! Here's how to use my powers:<br><br>
-                                📸 <strong>Step 1:</strong> Upload an image using the button above<br>
-                                🎨 <strong>Step 2:</strong> Choose an effect from the sidebar, or describe what you want in chat<br>
-                                ✨ <strong>Step 3:</strong> I'll transform your image with mystical magic!<br><br>
-                                You can chain effects together - use "Use Result" to apply multiple transformations!<br><br>
-                                <em>What image shall I transform for you today?</em>
+                               I grant wishes for magical image transformations! Here's
+                                how to use my powers:<br><br>
+                               📸 <strong>Step 1:</strong> Upload an image using the
+                                button above<br>
+                               🎨 <strong>Step 2:</strong> Choose an effect from the
+                                sidebar, or describe what you want in chat<br>
+                               ✨ <strong>Step 3:</strong> I'll transform your image
+                                with mystical magic!<br><br>
+                               You can chain effects together - use "Use Result" to
+                                apply multiple transformations!<br><br>
+                               <em>What image shall I transform for you today?</em>
                             </div>
                         </div>
                     </div>
@@ -1084,7 +1091,7 @@
         function selectToolFromChat(toolName, toolTitle) {
             selectedTool = toolName;
             const applyBtn = document.getElementById('applyToolBtn');
-            
+
             // Highlight in sidebar
             document.querySelectorAll('.tool-option').forEach(o => {
                 if (o.dataset.tool === selectedTool) {
@@ -1093,15 +1100,15 @@
                     o.classList.remove('selected');
                 }
             });
-            
+
             if (applyBtn) {
                 applyBtn.disabled = false;
             }
-            
+
             if (currentUploadedFilename) {
-                    addGenieMessage(`✨ Excellent choice! ${toolTitle} is selected. Click "Apply Effect" and watch me work my magic!`);
+                addGenieMessage(`✨ Excellent choice! ${toolTitle} is selected. Click "Apply Effect" and watch me work my magic!`);
             } else {
-                    addGenieMessage(`✨ ${toolTitle} is ready! First, grant me an image to transform with this magic!`);
+                addGenieMessage(`✨ ${toolTitle} is ready! First, grant me an image to transform with this magic!`);
             }
         }
 
@@ -1174,7 +1181,7 @@
 
                     // Extract filename from output_file path
                     const outputFilename = data.output_file.split('/').pop();
-                    
+
                     // Update images
                     if (originalImg) {
                         // Show current input (either original or previous processed)
@@ -1201,12 +1208,12 @@
                         addGenieMessage(`💡 <strong>Genie's Tip:</strong> ${data.tip}`);
                     }
                     addGenieMessage("✨ Select another effect to continue the magic, or use 'Use Result' to chain transformations!");
-                    
+
                     // Store the new processed filename for potential chaining
                     currentUploadedFilename = outputFilename;
                     usingProcessedAsInput = false; // Reset flag - user can choose to use result
                     selectedTool = null;
-                    
+
                     // Clear tool selection
                     document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
                     if (applyBtn) applyBtn.disabled = true;
@@ -1223,43 +1230,43 @@
 
         function useResultAsInput() {
             if (!currentUploadedFilename) return;
-            
+
             usingProcessedAsInput = true;
             const originalImg = document.getElementById('originalImage');
             const processedImg = document.getElementById('processedImage');
             const canvasStatus = document.getElementById('canvasStatus');
             const originalLabel = document.querySelector('.canvas-column:first-child .canvas-label');
-            
+
             if (originalImg && processedImg) {
                 // Move processed to original position
                 originalImg.src = processedImg.src;
                 processedImg.src = '';
                 processedImg.classList.add('hidden');
             }
-            
+
             if (originalLabel) {
                 originalLabel.textContent = "Current Input";
             }
-            
+
             if (canvasStatus) {
                 canvasStatus.textContent = "Using result as input. Select an effect to apply.";
             }
-            
+
             addGenieMessage("✨ Excellent choice! I shall use this result as the foundation for the next transformation. What effect shall I apply?");
         }
 
         function resetToOriginal() {
             if (!originalUploadedFilename) return;
-            
+
             usingProcessedAsInput = false;
             currentUploadedFilename = originalUploadedFilename;
-            
+
             const originalImg = document.getElementById('originalImage');
             const processedImg = document.getElementById('processedImage');
             const canvasStatus = document.getElementById('canvasStatus');
             const canvasActions = document.getElementById('canvasActions');
             const originalLabel = document.querySelector('.canvas-column:first-child .canvas-label');
-            
+
             if (originalImg) {
                 originalImg.src = `/static/uploads/${originalUploadedFilename}`;
                 originalImg.classList.remove('hidden');
@@ -1277,7 +1284,7 @@
             if (canvasActions) {
                 canvasActions.style.display = 'none';
             }
-            
+
             addGenieMessage("✨ *snaps fingers* Reset complete! We're back to the original image. What transformation shall I perform?");
         }
 
@@ -1409,7 +1416,7 @@
                             </div>
                         `;
                         bubble.innerHTML += toolsHtml;
-                        
+
                         // Add click handlers to tool options
                         messageDiv.querySelectorAll('.chat-tool-option').forEach(option => {
                             option.addEventListener('click', () => {

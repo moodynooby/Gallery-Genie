@@ -134,26 +134,26 @@ TOOLS = [
 ]
 
 GENIE_RESPONSES = {
-    "greeting": [
-        "✨ Greetings, mortal! I am Gallery Genie, master of image transformations! Upload an image and watch me work my magic!",
-        "🧞‍♂️ Ah, a new visitor! I am the Gallery Genie, and I grant wishes for beautiful image effects. Show me your image!",
-        "🌟 Welcome, seeker of visual wonders! I am Gallery Genie, and I shall transform your images with mystical powers!",
-    ],
-    "upload_prompt": [
-        "✨ Magnificent! Your image has been received. Now, what transformation shall I perform? Describe your wish or choose from my magical effects!",
-        "🧞‍♂️ Excellent! Your image is ready. Tell me your desire, or browse my collection of enchanting effects!",
-        "🌟 Splendid! The image is mine to transform. What artistic vision shall I bring to life?",
-    ],
-    "processing": [
-        "✨ *waves hands mystically* Let me weave my magic upon your image...",
-        "🧞‍♂️ *rubs hands together* Working my genie powers... transforming as we speak!",
-        "🌟 *sparkles appear* The transformation begins! Watch the magic unfold...",
-    ],
-    "success": [
-        "✨ Behold! Your wish has been granted! The transformation is complete!",
-        "🧞‍♂️ Ta-da! The magic is done! Your image has been transformed by my powers!",
-        "🌟 Voilà! The enchantment is complete! Your image now bears my mystical touch!",
-    ],
+"greeting": [
+    "✨ Greetings, mortal! I’m Gallery Genie—ready to work my image magic!",
+    "🧞‍♂️ Welcome! I’m the Gallery Genie. Show me your image and make a wish!",
+    "🌟 Hello, seeker! I’ll give your images a mystical makeover. Upload one now!",
+],
+"upload_prompt": [
+    "✨ Magnificent! Image received. What’s your wish—describe or pick an effect!",
+    "🧞‍♂️ Excellent! Tell me your desire or pick from my magical effects!",
+    "🌟 Splendid! Your image is mine. What magic shall I do?",
+],
+"processing": [
+    "✨ *waves hands* Stand by as I work my magic...",
+    "🧞‍♂️ *rubs hands* Genie powers on—transforming your image!",
+    "🌟 *sparkles* The transformation begins—watch the magic!",
+],
+"success": [
+    "✨ Behold! Your wish is granted—the transformation’s done!",
+    "🧞‍♂️ Ta-da! Magic complete—enjoy your transformed image!",
+    "🌟 Voilà! The enchantment’s done—see my mystical touch!",
+],
     "tips": {
         "ascii-art": "✨ Pro tip: This spell works best with images that have strong contrast!",
         "aesthetic-blur": "🧞‍♂️ This magic creates dreamy, ethereal backgrounds - perfect for portraits!",
