@@ -911,19 +911,19 @@
 
             <div class="canvas-panel">
                 <div class="canvas-header">
-                    <div class="canvas-title">Image Preview</div>
+                    <div class="canvas-title">Image Canvas</div>
                 </div>
                 <div class="canvas-body">
                     <div class="canvas-column">
-                        <div class="canvas-label">Original</div>
+                        <div class="canvas-label">Original Preview </div>
                         <div class="canvas-image-wrapper">
-                            <img id="originalImage" class="hidden" alt="Original preview">
+                            <img id="originalImage" class="hidden" alt="Original Preview Will Appear Here">
                         </div>
                     </div>
                     <div class="canvas-column">
-                        <div class="canvas-label">Transformed</div>
+                        <div class="canvas-label">Transformed Preview </div>
                         <div class="canvas-image-wrapper">
-                            <img id="processedImage" class="hidden" alt="Transformed preview">
+                            <img id="processedImage" class="hidden" alt="Transformed Preview Will Appear Here">
                         </div>
                     </div>
                 </div>
@@ -964,7 +964,10 @@
     <script>
         let currentFile = null;
         let currentUploadedFilename = null;
+        let originalUploadedFilename = null;
         let selectedTool = null;
+        let usingProcessedAsInput = false;
+        let pendingActionRequired = false;
         let conversationState = 'idle'; // idle, awaiting_tool_selection, processing
         let scrollPending = false;
         let uploadInProgress = false;
@@ -985,6 +988,22 @@
             sendBtn.disabled = !isEnabled;
             if (placeholder !== null) {
                 chatInput.placeholder = placeholder;
+            }
+        }
+
+        function updateApplyButtonState() {
+            const applyBtn = document.getElementById('applyToolBtn');
+            if (!applyBtn) return;
+
+            const canApply = Boolean(currentUploadedFilename && selectedTool && !pendingActionRequired);
+            applyBtn.disabled = !canApply;
+
+            if (pendingActionRequired) {
+                applyBtn.title = 'Use result or reset before applying another effect';
+            } else if (selectedTool) {
+                applyBtn.title = 'Apply the selected effect';
+            } else {
+                applyBtn.title = 'Select an effect to enable this button';
             }
         }
 
@@ -1101,9 +1120,7 @@
                 }
             });
 
-            if (applyBtn) {
-                applyBtn.disabled = false;
-            }
+            updateApplyButtonState();
 
             if (currentUploadedFilename) {
                 addGenieMessage(`✨ Excellent choice! ${toolTitle} is selected. Click "Apply Effect" and watch me work my magic!`);
@@ -1130,14 +1147,17 @@
                     document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
                     option.classList.add('selected');
                     selectedTool = option.dataset.tool;
-                    const applyBtn = document.getElementById('applyToolBtn');
-                    if (applyBtn) applyBtn.disabled = false;
+                    updateApplyButtonState();
                 });
             });
         }
 
         async function applyTransformation() {
             if (!currentUploadedFilename || !selectedTool) return;
+            if (pendingActionRequired) {
+                addGenieMessage("✨ Before applying more magic, please choose 'Use Result' or 'Reset' so I know which image to enchant next!");
+                return;
+            }
 
             conversationState = 'processing';
             const applyBtn = document.getElementById('applyToolBtn');
@@ -1197,7 +1217,7 @@
                         processedImg.classList.remove('hidden');
                     }
                     if (canvasStatus) {
-                        canvasStatus.textContent = `${toolName} applied! Select another effect to continue.`;
+                        canvasStatus.textContent = `${toolName} applied! Use the result or reset before applying another effect.`;
                     }
                     if (canvasActions) {
                         canvasActions.style.display = 'flex';
@@ -1212,17 +1232,20 @@
                     // Store the new processed filename for potential chaining
                     currentUploadedFilename = outputFilename;
                     usingProcessedAsInput = false; // Reset flag - user can choose to use result
+                    pendingActionRequired = true;
                     selectedTool = null;
 
                     // Clear tool selection
                     document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
-                    if (applyBtn) applyBtn.disabled = true;
+                    updateApplyButtonState();
                 } else {
                     addGenieMessage("🧞‍♂️ Hmm, my magic failed this time. Let me try again!");
+                    updateApplyButtonState();
                 }
             } catch (error) {
                 loadingMsg.remove();
                 addGenieMessage("✨ Oops! Something went wrong with my magic. Please try again!");
+                updateApplyButtonState();
             } finally {
                 conversationState = 'idle';
             }
@@ -1232,6 +1255,7 @@
             if (!currentUploadedFilename) return;
 
             usingProcessedAsInput = true;
+            pendingActionRequired = false;
             const originalImg = document.getElementById('originalImage');
             const processedImg = document.getElementById('processedImage');
             const canvasStatus = document.getElementById('canvasStatus');
@@ -1253,12 +1277,14 @@
             }
 
             addGenieMessage("✨ Excellent choice! I shall use this result as the foundation for the next transformation. What effect shall I apply?");
+            updateApplyButtonState();
         }
 
         function resetToOriginal() {
             if (!originalUploadedFilename) return;
 
             usingProcessedAsInput = false;
+            pendingActionRequired = false;
             currentUploadedFilename = originalUploadedFilename;
 
             const originalImg = document.getElementById('originalImage');
@@ -1286,6 +1312,7 @@
             }
 
             addGenieMessage("✨ *snaps fingers* Reset complete! We're back to the original image. What transformation shall I perform?");
+            updateApplyButtonState();
         }
 
         uploadBtn.addEventListener('click', () => fileInput.click());
@@ -1319,6 +1346,7 @@
                     currentUploadedFilename = data.filename;
                     originalUploadedFilename = data.filename; // Store original
                     usingProcessedAsInput = false; // Reset
+                    pendingActionRequired = false;
 
                     const originalImg = document.getElementById('originalImage');
                     const processedImg = document.getElementById('processedImage');
@@ -1342,6 +1370,9 @@
 
                     addGenieMessage(data.message);
                     setChatAvailability(true, readyPlaceholder);
+                    selectedTool = null;
+                    document.querySelectorAll('.tool-option').forEach(o => o.classList.remove('selected'));
+                    updateApplyButtonState();
                     conversationState = 'idle';
                     chatInput.focus();
                 } else {
@@ -1384,8 +1415,7 @@
                     addGenieMessage(data.response);
                     if (currentUploadedFilename) {
                         selectedTool = data.tool.name;
-                        const applyBtn = document.getElementById('applyToolBtn');
-                        if (applyBtn) applyBtn.disabled = false;
+                        updateApplyButtonState();
                         // Highlight the suggested tool in sidebar
                         document.querySelectorAll('.tool-option').forEach(o => {
                             if (o.dataset.tool === selectedTool) {
@@ -1444,6 +1474,7 @@
 
         // Initialize tools in sidebar on load
         addToolSelector();
+        updateApplyButtonState();
 
         const applyBtn = document.getElementById('applyToolBtn');
         if (applyBtn) {
